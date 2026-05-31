@@ -1,85 +1,94 @@
-# vLLM Doctor 🩺 — AI Model Serving Diagnostics Engine
+# AI Launch Readiness Agent 🚀 — Enterprise Model Serving & Sizing Guardrail
 
-vLLM Doctor is an expert-systems optimization and triage dashboard for **vLLM** model serving deployments. Given core production workload metrics (such as throughput, QPS, latency quantiles, GPU core loads, and KV cache utilization), vLLM Doctor automatically classifies your model serving workload, diagnoses mechanical bottlenecks (memory, bandwidth, compute, or networking bounds), and generates autotuned, copy-to-clipboard engine startup configurations.
+The **AI Launch Readiness Agent** is a state-of-the-art diagnostic and sizing engine built for **vLLM** and modern LLM serving infrastructures. It translates high-level business goals (such as Daily Active Users, monthly budgets, and latency SLAs) into concrete, physics-informed hardware cluster configurations and operational readiness metrics. 
 
 ---
 
 ## 🚀 Quick Start & Local Execution
 
-### 1. Prerequisite Installations
-Ensure Python 3.9+ is installed. Then clone this repository and install the standard dependency stack:
+### 1. Installation
+Ensure Python 3.9+ is configured. Clone this repository and install the standard dependency stack:
 ```bash
 pip install -r requirements.txt
 ```
 
-### 2. Launch the Streamlit Diagnostic Console
-Execute the following command in your terminal to start the local developer server:
+### 2. Run the Dashboard Console
+Launch the local development Streamlit server:
 ```bash
 streamlit run app.py
 ```
-This automatically spins up the server and opens the dashboard in your default browser at `http://localhost:8501`.
+This automatically starts the server and opens the dashboard console in your default browser at `http://localhost:8501`.
 
 ---
 
-## 🛠️ Project Structure
-```bash
-llm-serving-doctor/
-├── app.py                      # Main Streamlit UI & Glassmorphism Dashboard
-├── serving_analyzer.py         # Computational Heuristics & Diagnostics Engine
-├── requirements.txt            # Package Dependency List (Streamlit, PyYAML, Plotly, Pandas)
-├── README.md                   # System Documentation
-└── sample_inputs/              # Standard Workload Presets
-    ├── llama_70b_kv_pressure.yaml  # High-concurrency prefill-heavy saturation case
-    └── decode_heavy_low_util.yaml  # Sequential memory-bandwidth starvation case
+## 🛠️ Unified Architecture
+
+```mermaid
+graph TD
+    A[Business-Focused Form] -->|DAU, Request/User, SLA, Budget| B(Physics-Informed Sizing Engine)
+    B -->|Peak QPS, Concurrency Model| C(Serving Heuristics Analyzer)
+    C -->|ITL, TTFT, Core Saturation| D(Launch Readiness Evaluator)
+    D -->|0-100 Score & Dimension Breakdown| E[🏁 FINAL LAUNCH RECOMMENDATION]
+    E -->|Write summary on every change| F[📁 executive_summary.md]
+    E -->|Interactive Diagnostics| G[🧠 Gemini Co-pilot Agent]
 ```
 
+*   **`app.py`:** Standard Streamlit visual console styled with rich glassmorphism elements, real-time interactive sliders, performance gauges, and dynamic tab rendering.
+*   **`serving_analyzer.py`:** Computational heuristics core translating business metrics into sequential decode times, queuing boundaries, and replica scale requirements.
+*   **`serving_agent.py`:** Stateful, multi-tool **Google Antigravity SDK Agent** powered by Gemini, allowing engineers and leaders to diagnose server performance via natural language.
+
 ---
 
-## 🧠 Diagnostic Heuristics & Sizing Criteria
-vLLM Doctor utilizes domain-expert rules to analyze and optimize inference server settings:
+## 📈 5-Dimension Launch Readiness Profile
 
-| Identified Pathology | Triggering Criteria | Primary Remediation |
+The application evaluates your deployment candidate across five rigorous engineering dimensions, producing an overall **Launch Readiness Score (0-100)**:
+
+1.  **💵 Cost Readiness (0-100):** Grades compliance against your monthly AI hosting budget. Satisfied completely (100) if cluster lease fees fit comfortably within limits.
+2.  **🛡️ Reliability Readiness (0-100):** Audits redundancy. Scores full points (100) if high-availability active-active replication targets (e.g. redundant replicas) are provisioned.
+3.  **⚡ Capacity Readiness (0-100):** Measures GPU compute core occupancy and KV Cache High-Bandwidth Memory (HBM) pressure under simulated peak hours.
+4.  **🔍 Observability Readiness (0-100):** Evaluates log exposure, transaction tracing, and performance profiling headroom.
+5.  **📈 AI Evaluation Readiness (0-100):** Measures SLA conformance, grading latency degradation under queue pressure against your target millisecond budget.
+
+---
+
+## 🏁 Programmatic Launch Decision Matrix
+
+To ensure unbiased deployment sign-offs, the system implements a rigid, programmatic decision heuristic based on live SLAs and capacity limits:
+
+| Verdict | Triggering Criteria | Operational Meaning |
 | :--- | :--- | :--- |
-| **KV Cache Saturation / Memory OOM** | `kv_cache_usage_pct >= 90.0%` | Adjust `--max-num-seqs` downward, or run with `--quantization fp8` / `--kv-cache-dtype fp8` to halve sequence context size. |
-| **Severe Prefill Starvation (High TTFT)** | `ttft_p95_sec > 2.0s` or high relative queue ratios | Enable Chunked Prefills (`--enable-chunked-prefill`) to interleave and co-schedule prompt pre-computations with decode phases. |
-| **Memory-Bandwidth Bound (Decode Starved)** | `gpu_utilization_pct < 30.0%` with high ITL | Increase the batch limit (`--max-num-seqs 512`) to process more overlapping sequences and amortize parameter loading costs. |
-| **Cross-GPU Interconnect Bottleneck** | `num_gpus > 1` with slow generation latency | Minimize Tensor Parallelism (`--tensor-parallel-size`) on PCIe networks and balance workloads via Pipeline Parallelism (`--pipeline-parallel-size`). |
-| **RAG / Conversational Latency** | High prompt context sharing | Enable Automatic Prefix Caching (`--enable-prefix-caching`) to skip redundant prompt prefills completely. |
+| **`GO`** | <ul><li>Overall Score $\ge 85$</li><li>SLA Latency Targets met (`P95 <= Target`)</li><li>Estimated costs $\le$ monthly budget</li><li>Hardware core margins comfortable</li></ul> | **Production Ready:** Clear path to launch. The system operates with ample headroom to handle peak-hour traffic spikes and remains fully budget-compliant. |
+| **`GO WITH CAUTION`** | <ul><li>Overall Score between $60$ and $84$</li><li>*OR* Core Status is `WARNING`</li><li>*OR* P95 latency slightly breaches target SLA</li><li>*OR* Cost exceeds budget headroom</li><li>*OR* High KV Cache pressure ($> 80\%$)</li></ul> | **Remediation Advised:** The deployment is viable under standard loads, but runs the risk of latency spikes, queuing timeouts, or financial overruns under peak bursts. Tuning (quantization, prefix caching, replica scaling) is highly recommended. |
+| **`NO GO`** | <ul><li>Overall Score $< 60$</li><li>*OR* Core Status is `CRITICAL`</li><li>*OR* Latency exceeds SLA by $> 1.5\text{x}$</li><li>*OR* GPU Lease Cost exceeds budget by $> 30\%$</li></ul> | **Immediate Release Block:** Critical bottleneck detected. High threat of immediate server crash (OOM), queuing starvation (TTFT $> 4\text{s}$), or budget overruns. Deploying in this state will cause immediate user friction. |
 
 ---
 
-## ⚙️ Managed Agent Console & Tools
+## 📁 Dynamically Compiled CTO/Founder Summaries
 
-vLLM Doctor is now equipped with a stateful **Google Antigravity Managed Agent** (`serving_agent.py`) leveraging the `google-antigravity` SDK. The agent is backed by four expert-system tools to perform granular diagnostics:
-1. `classify_workload`: Analyzes workload characteristics and assigns an execution profile.
-2. `analyze_kv_cache`: Audits High Bandwidth Memory (HBM) capacity and detects swap thrashing.
-3. `analyze_latency`: Evaluates prompt queuing boundaries (TTFT) and decode delays (ITL).
-4. `recommend_optimizations`: Tailors exact vLLM execution CLI overrides and maps operational tradeoffs.
+On every parameter update, slider move, or preset change, the engine compiles a dynamic markdown document summarizing the full deployment audit:
+*   **Written To:** `brain/<conversation-id>/executive_summary.md`
+*   **Contents:** Prominent final decision alerts, readiness dimension assessment tables, ranked lists of the **Top 3 Severest Risks**, Mermaid-based budget allocation pie charts, and step-by-step engineering next-actions for the engineering team.
 
-These tools preserve state dynamically across conversations via `ToolContext` keys, ensuring perfectly calibrated analysis.
+---
 
-### 🏃 Running the Agent Console
+## 🧠 Stateful Gemini Co-Pilot
 
-Ensure you are using Python 3.10+ (a modern environment like `.venv311` is included). Set your Gemini API key:
+The dashboard integrates a stateful conversational assistant. Backed by the **Google Antigravity SDK**, this agent leverages specific tools to parse engine state:
+1.  `classify_workload`: Determines if the request pattern is Prefill-bound, Decode-bound, or Balanced.
+2.  `analyze_kv_cache`: Audits device context allocation and swapping risks.
+3.  `analyze_latency`: Analyzes prompt arrival queues (TTFT) and decode speeds (ITL).
+4.  `recommend_optimizations`: Outputs copy-paste vLLM CLI parameters customized to the bottleneck.
+
+### Running the CLI Agent Directly
+Set your Gemini API key in your terminal:
 ```bash
-export GEMINI_API_KEY="your-gemini-api-key"
+export GEMINI_API_KEY="your-gemini-key"
 ```
-
-1. **Single-Query Diagnosis**:
-   ```bash
-   .venv311/bin/python serving_agent.py "Diagnose a Llama 3 70B workload on 2 A100 GPUs with 12 QPS, 2048 prompt, 256 output, 2.85s TTFT, 12.5s E2E, 94% GPU util, and 98% KV cache."
-   ```
-
-2. **Interactive Console Loop**:
-   ```bash
-   .venv311/bin/python serving_agent.py --interactive
-   ```
-
----
-
-## ⚖️ Tuning Trade-offs & Risks Included
-Optimizing serving parameters is a science of tradeoffs. Every recommendation generated by vLLM Doctor specifies:
-- 🟢 **Expected Benefits:** (e.g. latency stability, maximum peak throughput, or near-zero TTFT).
-- 🔴 **Potential Penalties:** (e.g. slight base prefill delay increases, minor reasoning quality loss from quantization, or memory-overhead bounds).
-- ⚙️ **Deployment Complexity:** Ranked from Low to High, helping ops engineers deploy optimizations safely.
-
+*   **Single Query Audit:**
+    ```bash
+    .venv311/bin/python serving_agent.py "Audit a Llama 3 8B workload with 35k DAU, target 1.8s SLA, and A100 GPUs."
+    ```
+*   **Interactive Terminal Session:**
+    ```bash
+    .venv311/bin/python serving_agent.py --interactive
+    ```
