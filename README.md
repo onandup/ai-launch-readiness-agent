@@ -18,6 +18,21 @@ Far fewer know whether it will:
 
 AI Launch Advisor acts as a virtual AI Infrastructure Advisor, helping teams evaluate launch readiness before shipping AI features.
 
+## Screenshots
+
+### Executive Launch Assessment
+
+![Executive Launch Assessment](docs/executive_summary.png)
+
+### AI Launch Review Board
+
+![AI Launch Review Board](docs/review_board.png)
+
+### Inference Optimization Recommendations
+
+![Inference Optimization Recommendations](docs/optimization_recommendations.png)
+![Inference Optimization Recommendations](docs/optimization_recommendations_detail.png)
+
 ---
 
 ## The Problem
