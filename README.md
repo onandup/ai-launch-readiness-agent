@@ -14,7 +14,7 @@ AI teams can build prototypes in days. Launching them reliably, cost-effectively
 
 ### Launch Readiness Assessment
 
-![Launch Readiness](docs/readiness-score.png)
+![Launch Readiness](docs/readiness_score.png)
 
 ### Recommendations
 
