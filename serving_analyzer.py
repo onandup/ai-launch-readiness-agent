@@ -542,7 +542,7 @@ class ServingAnalyzer:
         warning_names = [diag["title"] for diag in diagnoses if diag["severity"] == "WARNING"]
         
         summary_lines = [
-            f"**vLLM Doctor Clinical Diagnosis Report for {model_name}**",
+            f"**Headroom AI Infrastructure Analysis Report for {model_name}**",
             f"- **Hardware Environment:** {gpu_count_type}",
             f"- **Workload Characterization:** {workload_desc} profile executing at {m['qps']} QPS",
         ]

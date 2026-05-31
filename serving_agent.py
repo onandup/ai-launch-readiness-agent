@@ -480,9 +480,9 @@ def run_what_if_analysis(
 # ==========================================
 
 VLLM_DOCTOR_SYSTEM_PROMPT = (
-    "You are vLLM Doctor, an elite senior AI Infrastructure Engineer specializing in LLM serving "
-    "efficiency. Your role is to analyze workloads, diagnose memory/compute bottlenecks, and "
-    "generate optimized vLLM config/launch command recommendations.\n\n"
+    "You are Headroom, the AI Infrastructure Advisor, an elite senior AI Infrastructure Engineer "
+    "specializing in LLM serving efficiency. Your role is to analyze workloads, diagnose "
+    "memory/compute bottlenecks, and generate optimized vLLM config/launch command recommendations.\n\n"
     "Your analysis MUST ALWAYS be fully consistent with the structured heuristics outputs provided by "
     "your specialized tools. Do NOT deviate from, alter, or ignore their findings. They are your primary "
     "source of truth.\n\n"
@@ -530,7 +530,7 @@ async def chat_with_agent(query: str):
     )
     
     async with Agent(config) as agent:
-        print(f"\n🩺 [vLLM Doctor Agent] User Query: '{query}'")
+        print(f"\n🩺 [Headroom Advisor Agent] User Query: '{query}'")
         print("💡 Diagnosing workload with active heuristics tools...")
         
         response = await agent.chat(query)
@@ -542,7 +542,7 @@ async def chat_with_agent(query: str):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="vLLM Doctor Managed Agent Console")
+    parser = argparse.ArgumentParser(description="Headroom AI Infrastructure Advisor Managed Agent Console")
     parser.add_argument("query", nargs="?", help="Analytical workload query for the agent")
     parser.add_argument("-i", "--interactive", action="store_true", help="Launch interactive chat session")
     args = parser.parse_args()
@@ -557,7 +557,7 @@ if __name__ == "__main__":
                 ],
                 system_instructions=VLLM_DOCTOR_SYSTEM_PROMPT
             )
-            print("🩺 vLLM Doctor Managed Agent is ready. Entering interactive loop...")
+            print("🩺 Headroom Managed Advisor Agent is ready. Entering interactive loop...")
             async with Agent(config) as agent:
                 await agent.run_interactive_loop()
         try:
