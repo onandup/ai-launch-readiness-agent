@@ -16,9 +16,9 @@
 
 **Before you launch an AI feature, get a virtual review from an AI Infrastructure Lead.**
 
-AI teams can build prototypes in days. Launching them reliably, cost-effectively, and at scale is much harder.
+Think of this as a virtual AI infrastructure review board that tells you whether you're actually ready to launch.
 
-AI Launch Readiness Agent helps founders, builders, and product teams evaluate whether an AI feature is truly ready for production by reviewing cost, reliability, scalability, observability, and operational risks.
+AI teams can build prototypes in days. Launching them reliably, cost-effectively, and at scale is much harder. AI Launch Readiness Agent helps founders, builders, and product teams evaluate whether an AI feature is truly ready for production by reviewing cost, reliability, scalability, observability, and operational risks.
 
 ## The Problem
 
