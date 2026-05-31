@@ -1,175 +1,208 @@
-# AI Launch Readiness Agent
+# Headroom
 
-Before you launch an AI feature, get a virtual review from an AI Infrastructure Lead.
+## AI Launch Advisor 🚀
 
-Think of this as a virtual AI infrastructure review board that tells you whether you're actually ready to launch.
+Launch AI products with confidence.
 
-AI teams can build prototypes in days. Launching them reliably, cost-effectively, and at scale is much harder.
+Headroom helps founders, builders, and engineering teams determine whether an AI product is truly ready for production.
 
-## Screenshots
+Most teams can build an AI prototype in days.
 
-### Launch Planning Input
+Far fewer know whether it will:
 
-![Launch Planning Input](docs/input_form.png)
+* Stay within budget
+* Meet latency targets
+* Scale to expected demand
+* Operate reliably in production
+* Deliver measurable business value
 
-### Launch Readiness Assessment
+AI Launch Advisor acts as a virtual AI Infrastructure Advisor, helping teams evaluate launch readiness before shipping AI features.
 
-![Launch Readiness](docs/readiness_score.png)
-
-### Recommendations
-
-![Recommendations](docs/recommendations.png)
-
-## Why This Matters
-
-Many founders launch AI features without understanding:
-
-- How much they will cost
-- Whether they will scale
-- Whether they will meet latency goals
-- How reliability incidents will be handled
-- Whether they have the right evaluation framework
-
-Large companies run launch reviews before shipping AI systems.
-
-Most startups don't.
-
-AI Launch Readiness Agent brings that expertise to founders and builders.
+---
 
 ## The Problem
 
-Many AI launches fail because teams underestimate:
+Building AI products has never been easier.
 
-* AI inference costs
-* Latency and scalability challenges
-* Reliability and on-call requirements
-* Evaluation and quality measurement gaps
-* Capacity planning needs
-* Operational readiness
+Launching them reliably is still hard.
 
-Large companies typically conduct launch reviews involving infrastructure, reliability, product, and machine learning experts before shipping AI features.
+Founders frequently underestimate:
+
+* AI infrastructure costs
+* Capacity requirements
+* Reliability risks
+* Latency constraints
+* Evaluation readiness
+* Operational complexity
+
+Large technology companies rely on launch reviews involving infrastructure, product, reliability, and machine learning experts before shipping AI systems.
 
 Most startups do not have access to that expertise.
 
+---
+
 ## The Solution
 
-AI Launch Readiness Agent acts as a virtual AI launch review board.
+AI Launch Advisor evaluates AI products across five critical dimensions:
 
-Users describe their planned AI feature, expected traffic, latency goals, budget, and reliability requirements.
+### 💵 Cost Readiness
 
-The agent evaluates:
+Can you afford to operate this product at scale?
 
-* Cost readiness
-* Reliability readiness
-* Capacity readiness
-* Evaluation readiness
-* Observability readiness
+### ⚡ Capacity Readiness
 
-And produces:
+Can the infrastructure support projected demand?
 
-* Launch Readiness Score
-* Go / Go With Caution / No-Go recommendation
-* Top launch risks
-* Recommended mitigations
-* Executive summary for founders and CTOs
+### 🛡️ Reliability Readiness
 
-## Example
+Will the system meet production availability goals?
+
+### 🔍 Observability Readiness
+
+Will you know when things break?
+
+### 📈 Evaluation Readiness
+
+Can you measure quality and business impact?
+
+The system combines launch-readiness reviews with production AI infrastructure expertise to answer a simple question:
+
+# Are we ready to launch?
+
+---
+
+## Example Assessment
 
 ### Input
 
-Feature: AI Customer Support Agent
+Feature:
+AI Customer Support Copilot
 
-Expected DAU: 100,000
+Expected DAU:
+100,000
 
-Requests per User per Day: 20
+Requests per User per Day:
+20
 
-Model: Gemini 2.5 Pro
+Model:
+Gemini 2.5 Pro
 
-Latency Target: 2 seconds
+Latency Target:
+2 seconds
 
-Monthly AI Budget: $20,000
+Monthly AI Budget:
+$25,000
 
-Reliability Target: 99.9%
+Reliability Target:
+99.9%
 
 ### Output
 
-Launch Readiness Score: 68/100
+Launch Verdict:
+🟡 LAUNCH WITH MITIGATIONS
 
-Verdict: GO WITH CAUTION
+Launch Readiness Score:
+72 / 100
 
 Top Risks:
 
-* AI costs likely exceed budget
+* Latency exceeds target SLA
 * No fallback model strategy
-* Missing evaluation framework
+* Evaluation framework not defined
 
 Recommendations:
 
-* Route simple requests to a lower-cost model
-* Define quality evaluation metrics
-* Implement fallback and rate-limiting strategy
+* Introduce model routing
+* Add caching strategy
+* Define launch success metrics
+* Implement fallback infrastructure
 
-## How It Works
+---
 
-## Managed Agent Architecture
+## What Makes Headroom Different
 
-The AI Launch Readiness Agent acts as a virtual review board.
+Most AI launch tools focus on application development.
 
-It uses specialized tools for:
+Headroom focuses on production reality.
 
-- Capacity analysis
-- Cost analysis
-- Reliability review
-- Launch risk assessment
-- Recommendation generation
+The system incorporates expertise from:
 
-The managed agent orchestrates these analyses and produces a launch recommendation.
-
-The system combines:
-
-### Launch Review Agent
-
-A managed AI agent that performs launch-readiness analysis and recommendation generation.
-
-### Infrastructure Analysis Engine
-
-Domain-specific analysis for:
-
+* AI infrastructure
+* Model serving
+* Inference optimization
 * Capacity planning
-* Model serving readiness
-* Reliability risks
-* Latency constraints
-* Cost considerations
+* Reliability engineering
+* Cost management
 
-### Recommendation Engine
+Technical recommendations are translated into business outcomes.
 
-Generates actionable launch recommendations with rationale and expected impact.
+Examples:
 
-## Example Review Dimensions
+Instead of:
 
-### Can You Afford This?
+"Enable chunked prefill"
 
-* Monthly AI spend projections
-* Cost scaling analysis
-* Budget risk assessment
+Headroom explains:
 
-### Will It Stay Up?
+"Your latency target is unlikely to be met under peak traffic without improving request scheduling."
 
-* Reliability requirements
-* Failure mode analysis
-* Operational readiness
+Instead of:
 
-### Can It Scale?
+"Increase batching efficiency"
 
-* Traffic projections
-* Capacity considerations
-* Growth assumptions
+Headroom explains:
 
-### How Will You Know It's Working?
+"You are likely overprovisioning infrastructure and leaving cost savings on the table."
 
-* Evaluation framework
-* Success metrics
-* Monitoring requirements
+---
+
+## AI Launch Review Board
+
+Headroom simulates a launch review involving multiple perspectives:
+
+### Infrastructure Lead
+
+Evaluates:
+
+* Capacity
+* Scaling
+* Reliability
+* Infrastructure risks
+
+### Product Lead
+
+Evaluates:
+
+* Evaluation readiness
+* Product metrics
+* Launch success criteria
+
+### Finance Lead
+
+Evaluates:
+
+* Budget utilization
+* Cost scaling
+* Infrastructure efficiency
+
+The system combines these perspectives into a final launch recommendation.
+
+---
+
+## Infrastructure Economics
+
+Headroom helps teams understand:
+
+* Current infrastructure costs
+* Projected scaling costs
+* Capacity headroom
+* Optimization opportunities
+
+The goal is not merely to reduce infrastructure spend.
+
+The goal is to launch AI products safely and sustainably.
+
+---
 
 ## Built With
 
@@ -179,15 +212,31 @@ Generates actionable launch recommendations with rationale and expected impact.
 * Streamlit
 * Python
 
-## Future Roadmap
+---
+
+## Future Vision
+
+Headroom is building infrastructure tooling that helps teams launch and scale AI products safely.
+
+Future capabilities include:
 
 * Real cloud cost estimation
-* Production telemetry integration
+* Production telemetry ingestion
 * Launch review history
-* Team collaboration workflows
-* Automated launch checklists
-* Multi-agent architecture reviews
+* Architecture reviews
+* Capacity forecasting
+* AI infrastructure observability
+* Inference optimization recommendations
 
-## Inspiration
+---
 
-This project was inspired by the production launch reviews used for large-scale AI systems at leading technology companies. The goal is to make that expertise accessible to startups and builders.
+## About Headroom
+
+Headroom brings production AI infrastructure expertise to every builder.
+
+Our mission is to help teams answer the questions that matter before launch:
+
+* Can we afford this?
+* Will it scale?
+* Will it stay reliable?
+* Are we actually ready?

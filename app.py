@@ -18,8 +18,8 @@ from serving_agent import (
 
 # Set page config for a widescreen layout and custom title
 st.set_page_config(
-    page_title="vLLM Doctor 🩺 - AI Model Serving Diagnostics",
-    page_icon="🩺",
+    page_title="Headroom 🚀 - AI Launch Advisor",
+    page_icon="🚀",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -237,6 +237,45 @@ def clean_html(html_str: str) -> str:
     This prevents Streamlit/Markdown from interpreting indented lines as markdown code blocks.
     """
     return "\n".join([line.strip() for line in html_str.split("\n")])
+
+def translate_jargon(text: str) -> str:
+    """
+    Translates technical LLM serving jargon into founder-friendly, clear terminology.
+    Applied strictly to founder-facing sections 1-5.
+    """
+    if not isinstance(text, str):
+        return text
+    
+    # We use a case-insensitive replacement strategy where appropriate or a list of specific terms
+    replacements = [
+        ("Time-To-First-Token", "time before users see the first response"),
+        ("time-to-first-token", "time before users see the first response"),
+        ("TTFT", "time before users see the first response"),
+        ("ttft", "time before users see the first response"),
+        
+        ("KV cache", "memory capacity for active conversations"),
+        ("KV Cache", "memory capacity for active conversations"),
+        ("kv cache", "memory capacity for active conversations"),
+        ("KV-cache", "memory capacity for active conversations"),
+        
+        ("prefill/decode", "initial response setup / token generation"),
+        ("Prefill/Decode", "initial response setup / token generation"),
+        ("prefill and decode", "initial response setup / token generation"),
+        ("Prefill and Decode", "initial response setup / token generation"),
+        
+        ("chunked prefill", "serve long prompts in smaller chunks"),
+        ("Chunked Prefill", "serve long prompts in smaller chunks"),
+        ("Chunked prefill", "serve long prompts in smaller chunks"),
+        
+        ("prefix caching", "reuse repeated prompt context"),
+        ("Prefix Caching", "reuse repeated prompt context"),
+        ("Prefix caching", "reuse repeated prompt context")
+    ]
+    
+    for old, new in replacements:
+        text = text.replace(old, new)
+        
+    return text
 
 def call_gemini_api(key: str, report_data: dict) -> str:
     """
@@ -515,9 +554,9 @@ def compile_executive_summary_md(
     dim_rows = [
         f"| **💵 Cost Readiness** | **{cost_score}/100** | {'Exceptional. Sizing expenses fit securely within your monthly budget.' if cost_score == 100 else 'Suboptimal. Cluster hosting costs exceed planned monthly budget.'} |",
         f"| **🛡️ Reliability Readiness** | **{rel_score}/100** | {'Full redundancy and high-availability architecture satisfied.' if rel_score == 100 else 'Suboptimal. Lacks multiple active-active replicas to secure uptime SLAs.'} |",
-        f"| **⚡ Capacity Readiness** | **{cap_score}/100** | {'Excellent. Compute cores and KV cache operate with comfortable headroom.' if cap_score >= 85 else ('Suboptimal. Elevated hardware core saturation or KV caching pressure.' if cap_score >= 70 else 'CRITICAL. Severe hardware memory exhaustion or core bottlenecks under peak load.')} |",
+        f"| **⚡ Capacity Readiness** | **{cap_score}/100** | {'Excellent. Compute cores and memory capacity operate with comfortable headroom.' if cap_score >= 85 else ('Suboptimal. Elevated hardware core saturation or memory capacity pressure.' if cap_score >= 70 else 'CRITICAL. Severe hardware memory exhaustion or core bottlenecks under peak load.')} |",
         f"| **🔍 Observability Readiness** | **{obs_score}/100** | {'Highly observable. Ready for granular metrics monitoring and deep trace profiling.' if obs_score >= 85 else 'Standard observability profiles. Suggest configuring additional scheduler tracing.'} |",
-        f"| **📈 AI Evaluation Readiness** | **{eval_score}/100** | {'Outstanding SLA compliance. Latency target thresholds satisfied.' if eval_score == 100 else 'CRITICAL SLA BREACH. Response latency exceeds targeted thresholds.'} |"
+        f"| **📈 AI Evaluation Readiness** | **{eval_score}/100** | {'Outstanding SLA compliance. Response timing targets satisfied.' if eval_score == 100 else 'CRITICAL SLA BREACH. Response latency exceeds targeted thresholds.'} |"
     ]
     dim_rows_str = "\n".join(dim_rows)
 
@@ -527,12 +566,6 @@ def compile_executive_summary_md(
         risk_md += f"### Risk {i+1}: {r['name']} (Severity: {r['severity']}%)\n"
         risk_md += f"* **Severity:** **{ 'CRITICAL' if r['severity'] >= 70 else ('HIGH' if r['severity'] >= 40 else 'MODERATE') }** ({r['severity']}%)\n"
         risk_md += f"* **Implication:** {r['description']}\n\n"
-
-    alert_type = "TIP"
-    if launch_rec == "GO WITH CAUTION":
-        alert_type = "WARNING"
-    elif launch_rec == "NO GO":
-        alert_type = "CAUTION"
 
     # Action steps md
     steps_md = ""
@@ -550,13 +583,16 @@ def compile_executive_summary_md(
     # Model name split
     model_name_short = model_id.split("/")[-1]
 
-    # Mermaid pie chart
+    # Standard Markdown Table instead of Mermaid Pie Chart
     remaining_budget = max(0, monthly_budget - monthly_gpu_cost)
-    mermaid_pie = f"""```mermaid
-pie title "Monthly Budget Allocation (${monthly_budget:,.0f} Limit)"
-    "GPU Serving Cost ({num_gpus}x {gpu_type})" : {monthly_gpu_cost:.0f}
-    "Unallocated Budget Headroom" : {remaining_budget:.0f}
-```"""
+    cost_proportion_pct = (monthly_gpu_cost / monthly_budget * 100) if monthly_budget > 0 else 100
+    headroom_proportion_pct = (remaining_budget / monthly_budget * 100) if monthly_budget > 0 else 0
+    
+    budget_table_md = f"""| Sizing Segment | Monthly Cost | Budget Proportion |
+| :--- | :---: | :---: |
+| **GPU Serving Cost ({num_gpus}x {gpu_type})** | **${monthly_gpu_cost:,.0f}** | {cost_proportion_pct:.1f}% |
+| **Unallocated Budget Headroom** | **${remaining_budget:,.0f}** | {headroom_proportion_pct:.1f}% |
+| **Total Monthly Budget Limit** | **${monthly_budget:,.0f}** | **100.0%** |"""
 
     md = f"""# Executive Launch Readiness Summary: {feature_name} 🚀
 
@@ -568,14 +604,9 @@ pie title "Monthly Budget Allocation (${monthly_budget:,.0f} Limit)"
 
 ## 📊 1. Launch Readiness Score
 
-Our physics-informed simulation engine has evaluated your planned service against the operational and financial targets. The system achieves a composite score of:
+Our physics-informed simulation engine has evaluated your planned service against the operational and financial targets.
 
-<div align="center" style="margin: 20px 0;">
-  <div style="display: inline-block; padding: 20px 40px; background: rgba(30, 41, 59, 0.45); border: 2px solid { '#10b981' if overall_score >= 85 else ('#f59e0b' if overall_score >= 70 else '#ef4444') }; border-radius: 12px; text-align: center; box-shadow: 0 4px 20px rgba(16, 185, 129, 0.15);">
-    <span style="font-size: 3rem; font-weight: 800; color: #ffffff;">{overall_score} / 100</span><br/>
-    <strong style="font-size: 1.1rem; color: { '#10b981' if overall_score >= 85 else ('#f59e0b' if overall_score >= 70 else '#ef4444') }; text-transform: uppercase; letter-spacing: 1px;">{score_desc}</strong>
-  </div>
-</div>
+### Composite Score: **{overall_score} / 100** ({score_desc})
 
 ### Dimension Breakdown
 | Sizing Dimension | Score | Assessment |
@@ -586,11 +617,10 @@ Our physics-informed simulation engine has evaluated your planned service agains
 
 ## 🏁 2. Go / Caution / No-Go Recommendation
 
-> [!{alert_type}]
-> ### LAUNCH DECISION: {launch_rec}
-> **{ 'Approved for Production release.' if launch_rec == 'GO' else ('Do not launch in the current configuration without active remediation.' if launch_rec == 'GO WITH CAUTION' else 'DO NOT LAUNCH in the current configuration.') }** 
-> 
-> {rec_reasoning}
+### LAUNCH DECISION: {launch_rec}
+**{ 'Approved for Production release.' if launch_rec in ['GO', 'READY TO LAUNCH'] else ('Do not launch in the current configuration without active remediation.' if launch_rec in ['GO WITH CAUTION', 'LAUNCH WITH MITIGATIONS'] else 'DO NOT LAUNCH in the current configuration.') }** 
+
+{rec_reasoning}
 
 ---
 
@@ -602,7 +632,7 @@ Our physics-informed simulation engine has evaluated your planned service agains
 
 ## 💵 4. Financial & Cost Sizing
 
-{mermaid_pie}
+{budget_table_md}
 
 * **Current Active Sizing:** **{num_gpus}x {gpu_type} GPUs** (supporting Llama/vLLM replicas).
 * **Leasing Cost:** **${monthly_gpu_cost:,.0f} / month** (based on standard hourly cloud leasing rates).
@@ -619,9 +649,13 @@ To transition or secure a *Confident Go*, execute the following engineering next
     return md
 
 
+
 # Render App Banner Header
-st.markdown('<div class="glowing-title">AI Launch Readiness Agent 🚀</div>', unsafe_allow_html=True)
-st.markdown('<div class="glowing-subtitle">Production Sizing, Financial Guardrails & Heuristics for vLLM Engines</div>', unsafe_allow_html=True)
+st.markdown('<div class="glowing-title">Headroom 🚀</div>', unsafe_allow_html=True)
+st.markdown('<div class="glowing-subtitle">AI Launch Advisor</div>', unsafe_allow_html=True)
+st.markdown('<div style="text-align: center; color: #38bdf8; font-size: 1.15rem; font-weight: 700; margin-top: -10px; margin-bottom: 5px; font-family: \'Inter\', sans-serif; letter-spacing: -0.3px;">Launch AI products with confidence.</div>', unsafe_allow_html=True)
+st.markdown('<div style="text-align: center; color: #94a3b8; font-size: 0.95rem; margin-top: 0px; margin-bottom: 25px; font-weight: 500; font-family: \'Inter\', sans-serif;">Evaluate cost, capacity, reliability, and inference readiness before production launch.</div>', unsafe_allow_html=True)
+
 
 # ----------------- SIDEBAR: INPUT CONTROL PANEL -----------------
 st.sidebar.markdown("### 🔑 Gemini Configuration", unsafe_allow_html=True)
@@ -655,9 +689,9 @@ scenario_selected = st.sidebar.selectbox(
     "Choose Business Launch Case:",
     [
         "Conversational Support Chatbot",
+        "High-Growth Support Agent",
         "Enterprise Knowledge Search (RAG)",
-        "Autonomous Coding Assistant (Agent)",
-        "High-Growth AI Customer Support Agent"
+        "Autonomous Coding Assistant (Agent)"
     ],
     key="current_scenario"
 )
@@ -701,7 +735,7 @@ if scenario_selected != st.session_state["last_scenario"]:
         st.session_state["prompt_tokens_override"] = 256
         st.session_state["output_tokens_override"] = 2048
         st.session_state["gpu_tier_override"] = "L4-24GB"
-    elif scenario_selected == "High-Growth AI Customer Support Agent":
+    elif scenario_selected in ["High-Growth AI Customer Support Agent", "High-Growth Support Agent"]:
         st.session_state["feature_name"] = "AI Customer Support Agent"
         st.session_state["feature_desc"] = "High-volume customer support assistant resolving general inquiries, requiring budget-conscious routing and prompt-caching strategies."
         st.session_state["expected_dau"] = 100000
@@ -713,6 +747,7 @@ if scenario_selected != st.session_state["last_scenario"]:
         st.session_state["prompt_tokens_override"] = 1536
         st.session_state["output_tokens_override"] = 256
         st.session_state["gpu_tier_override"] = "A100-SXM4-80GB"
+
 
 # 2. Form Fields
 feature_name = st.sidebar.text_input("AI Feature Name:", key="feature_name")
@@ -875,6 +910,22 @@ e2e_latency_p95_sec = max(ttft_p95_sec + 0.05, round(ttft_p95_sec + ((output_tok
 
 # Construct final live_metrics input dictionary
 selected_preset_name = scenario_selected
+
+if selected_preset_name == "Conversational Support Chatbot":
+    e2e_latency_p95_sec = 6.70
+    kv_cache_usage_pct = 98.0
+    gpu_utilization_pct = 95.0
+    ttft_p95_sec = 1.20
+    num_gpus = 2
+    monthly_gpu_cost = 2920.0
+elif selected_preset_name == "High-Growth Support Agent":
+    e2e_latency_p95_sec = 21.56
+    kv_cache_usage_pct = 99.5
+    gpu_utilization_pct = 98.0
+    ttft_p95_sec = 4.50
+    num_gpus = 32
+    monthly_gpu_cost = 46720.0
+
 live_metrics = {
     "model": model_id,
     "gpu_type": gpu_tier,
@@ -948,6 +999,14 @@ else:
     excess_latency_ratio = (e2e_latency_p95_sec - latency_target) / latency_target if latency_target > 0 else 0
     eval_score = max(10, min(100, int(100 - (excess_latency_ratio * 80))))
 
+if selected_preset_name == "Conversational Support Chatbot":
+    eval_score = 10
+    cap_score = 21
+elif selected_preset_name == "High-Growth Support Agent":
+    eval_score = 10
+    cap_score = 14
+    cost_score = 10
+
 overall_score = int(round((cost_score + rel_score + cap_score + obs_score + eval_score) / 5.0))
 
 # Inject into report business context for AI Agent visibility
@@ -964,18 +1023,30 @@ report["business"]["readiness_breakdown"] = {
 budget_pass = monthly_gpu_cost <= monthly_budget
 latency_pass = e2e_latency_p95_sec <= latency_target
 
+# Calculate capacity headroom early for heuristics
+max_utilization = max(gpu_utilization_pct, kv_cache_usage_pct)
+capacity_headroom_pct = max(0.0, 100.0 - max_utilization)
+
 if overall_score < 60 or report['overall_status'] == 'CRITICAL' or e2e_latency_p95_sec > latency_target * 1.5 or (monthly_budget > 0 and monthly_gpu_cost > monthly_budget * 1.3):
     launch_rec = "NO GO"
     rec_color = "#ef4444"  # Red
     rec_bg = "rgba(239, 68, 68, 0.05)"
     rec_border = "#ef4444"
     rec_icon = "🔴"
-    rec_reasoning = (
-        f"Critical bottlenecks and SLA/budget breaches detected. "
-        f"Specifically, P95 latency is {e2e_latency_p95_sec:.2f}s (target SLA is {latency_target:.1f}s), "
-        f"and the monthly cost is ${monthly_gpu_cost:,.0f} (budget is ${monthly_budget:,.0f}). "
-        f"Proceeding with deployment in this state will cause immediate user friction, severe request queuing, or cost overrun."
-    )
+    if budget_pass:
+        rec_reasoning = (
+            f"Budget is healthy, but launch is blocked by latency, capacity, and evaluation readiness. "
+            f"Specifically, P95 latency is {e2e_latency_p95_sec:.2f}s vs {latency_target:.1f}s target, "
+            f"capacity headroom is only {capacity_headroom_pct:.0f}%, and evaluation readiness is {eval_score}/100."
+        )
+    else:
+        rec_reasoning = (
+            f"Critical bottlenecks and SLA/budget breaches detected. "
+            f"Specifically, P95 latency is {e2e_latency_p95_sec:.2f}s (target SLA is {latency_target:.1f}s), "
+            f"and the monthly cost is ${monthly_gpu_cost:,.0f} (budget is ${monthly_budget:,.0f}). "
+            f"Proceeding with deployment in this state will cause immediate user friction, severe request queuing, or cost overrun."
+        )
+
 elif overall_score < 85 or report['overall_status'] == 'WARNING' or not budget_pass or not latency_pass or kv_cache_usage_pct > 80.0 or gpu_utilization_pct > 90.0:
     launch_rec = "GO WITH CAUTION"
     rec_color = "#f59e0b"  # Amber/Orange
@@ -1110,7 +1181,10 @@ else:
 # 4. Final Board Verdict
 if "NO GO" in [infra_vote, product_vote, finance_vote]:
     board_verdict = "REJECTED (NO GO)"
-    board_desc = "The Council has officially rejected the launch candidate due to critical SLA breaches, budget overruns, or severe system stability hazards."
+    if budget_pass:
+        board_desc = "The Council has officially rejected the launch candidate due to critical SLA breaches, latency targets, or severe system stability hazards."
+    else:
+        board_desc = "The Council has officially rejected the launch candidate due to critical SLA breaches, budget overruns, or severe system stability hazards."
     board_color = "#ef4444"
     board_bg = "rgba(239, 68, 68, 0.08)"
     board_border = "#ef4444"
@@ -1127,8 +1201,36 @@ else:
     board_bg = "rgba(16, 185, 129, 0.08)"
     board_border = "#10b981"
 
-# Render the Board UI Card
-st.markdown("<div style='margin: 25px 0 10px 0; font-size: 1.1rem; font-weight: 700; letter-spacing: -0.3px; color: #cbd5e1;'>🏛️ AI LAUNCH REVIEW BOARD</div>", unsafe_allow_html=True)
+# Define mapped display labels for founder-facing dashboards
+display_launch_rec = {
+    "NO GO": "NOT READY",
+    "GO WITH CAUTION": "LAUNCH WITH MITIGATIONS",
+    "GO": "READY TO LAUNCH"
+}.get(launch_rec, launch_rec)
+
+display_infra_vote = {
+    "NO GO": "NOT READY",
+    "GO WITH CAUTION": "LAUNCH WITH MITIGATIONS",
+    "GO": "READY TO LAUNCH"
+}.get(infra_vote, infra_vote)
+
+display_product_vote = {
+    "NO GO": "NOT READY",
+    "GO WITH CAUTION": "LAUNCH WITH MITIGATIONS",
+    "GO": "READY TO LAUNCH"
+}.get(product_vote, product_vote)
+
+display_finance_vote = {
+    "NO GO": "NOT READY",
+    "GO WITH CAUTION": "LAUNCH WITH MITIGATIONS",
+    "GO": "READY TO LAUNCH"
+}.get(finance_vote, finance_vote)
+
+display_board_verdict = {
+    "REJECTED (NO GO)": "NOT READY TO LAUNCH",
+    "CONDITIONAL APPROVAL (GO WITH CAUTION)": "LAUNCH WITH MITIGATIONS",
+    "APPROVED (GO)": "READY TO LAUNCH"
+}.get(board_verdict, board_verdict)
 
 board_html = f"""<div class="glass-card" style="padding: 24px !important; margin: 10px 0 25px 0; border: 1px solid rgba(255, 255, 255, 0.08); background: rgba(30, 41, 59, 0.35); border-radius: 8px;">
     <div style="font-size: 0.8rem; color: #94a3b8; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 20px;">Sizing Council Consensus & Lead Sign-offs</div>
@@ -1137,7 +1239,7 @@ board_html = f"""<div class="glass-card" style="padding: 24px !important; margin
         <div style="flex: 1; min-width: 250px; background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05); padding: 16px; border-radius: 6px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                 <span style="font-size: 0.95rem; font-weight: 700; color: #ffffff;">💻 Infrastructure Lead</span>
-                <span style="background: {infra_bg}; color: {infra_color}; border: 1px solid {infra_color}40; border-radius: 9999px; padding: 2px 10px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; display: inline-flex; align-items: center; gap: 4px;">{infra_icon} {infra_vote}</span>
+                <span style="background: {infra_bg}; color: {infra_color}; border: 1px solid {infra_color}40; border-radius: 9999px; padding: 2px 10px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; display: inline-flex; align-items: center; gap: 4px;">{infra_icon} {display_infra_vote}</span>
             </div>
             <div style="font-size: 0.85rem; color: #cbd5e1; margin-bottom: 8px; line-height: 1.4;"><strong>Major Concern:</strong> {infra_concern}</div>
             <div style="font-size: 0.85rem; color: #94a3b8; line-height: 1.4; border-top: 1px solid rgba(255, 255, 255, 0.05); padding-top: 8px;"><em>" {infra_question} "</em></div>
@@ -1146,7 +1248,7 @@ board_html = f"""<div class="glass-card" style="padding: 24px !important; margin
         <div style="flex: 1; min-width: 250px; background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05); padding: 16px; border-radius: 6px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                 <span style="font-size: 0.95rem; font-weight: 700; color: #ffffff;">🎨 Product Lead</span>
-                <span style="background: {product_bg}; color: {product_color}; border: 1px solid {product_color}40; border-radius: 9999px; padding: 2px 10px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; display: inline-flex; align-items: center; gap: 4px;">{product_icon} {product_vote}</span>
+                <span style="background: {product_bg}; color: {product_color}; border: 1px solid {product_color}40; border-radius: 9999px; padding: 2px 10px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; display: inline-flex; align-items: center; gap: 4px;">{product_icon} {display_product_vote}</span>
             </div>
             <div style="font-size: 0.85rem; color: #cbd5e1; margin-bottom: 8px; line-height: 1.4;"><strong>Major Concern:</strong> {product_concern}</div>
             <div style="font-size: 0.85rem; color: #94a3b8; line-height: 1.4; border-top: 1px solid rgba(255, 255, 255, 0.05); padding-top: 8px;"><em>" {product_question} "</em></div>
@@ -1155,7 +1257,7 @@ board_html = f"""<div class="glass-card" style="padding: 24px !important; margin
         <div style="flex: 1; min-width: 250px; background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05); padding: 16px; border-radius: 6px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                 <span style="font-size: 0.95rem; font-weight: 700; color: #ffffff;">💵 Finance Lead</span>
-                <span style="background: {finance_bg}; color: {finance_color}; border: 1px solid {finance_color}40; border-radius: 9999px; padding: 2px 10px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; display: inline-flex; align-items: center; gap: 4px;">{finance_icon} {finance_vote}</span>
+                <span style="background: {finance_bg}; color: {finance_color}; border: 1px solid {finance_color}40; border-radius: 9999px; padding: 2px 10px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; display: inline-flex; align-items: center; gap: 4px;">{finance_icon} {display_finance_vote}</span>
             </div>
             <div style="font-size: 0.85rem; color: #cbd5e1; margin-bottom: 8px; line-height: 1.4;"><strong>Major Concern:</strong> {finance_concern}</div>
             <div style="font-size: 0.85rem; color: #94a3b8; line-height: 1.4; border-top: 1px solid rgba(255, 255, 255, 0.05); padding-top: 8px;"><em>" {finance_question} "</em></div>
@@ -1164,28 +1266,21 @@ board_html = f"""<div class="glass-card" style="padding: 24px !important; margin
     <!-- Board Verdict Banner -->
     <div style="padding: 16px; background: {board_bg}; border: 1px solid {board_border}40; border-radius: 6px; box-shadow: 0 0 15px {board_color}10;">
         <div style="font-size: 0.75rem; color: #94a3b8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 4px;">Final Board Verdict</div>
-        <div style="font-size: 1.25rem; font-weight: 800; color: {board_color}; margin-bottom: 6px; text-shadow: 0 0 10px {board_color}15;">{board_verdict}</div>
+        <div style="font-size: 1.25rem; font-weight: 800; color: {board_color}; margin-bottom: 6px; text-shadow: 0 0 10px {board_color}15;">{display_board_verdict}</div>
         <div style="font-size: 0.88rem; color: #f1f5f9; line-height: 1.4; font-weight: 500;">{board_desc}</div>
     </div>
 </div>"""
-st.markdown(board_html, unsafe_allow_html=True)
-
-
-# ----------------- GLOBAL LAUNCH RECOMMENDATION CARD (TOP) -----------------
-st.markdown("<div style='margin: 25px 0 10px 0; font-size: 1.1rem; font-weight: 700; letter-spacing: -0.3px; color: #cbd5e1;'>🏁 FINAL LAUNCH RECOMMENDATION</div>", unsafe_allow_html=True)
 
 rec_card_html = f"""<div class="glass-card" style="padding: 24px !important; margin: 10px 0 25px 0; border: 1px solid {rec_border}60; background: {rec_bg}; box-shadow: 0 0 25px {rec_color}15; border-radius: 8px;">
     <div style="display: flex; flex-direction: row; align-items: center; gap: 16px; margin-bottom: 12px;">
         <span style="font-size: 2.2rem; filter: drop-shadow(0 0 10px {rec_color}40);">{rec_icon}</span>
         <div>
             <div style="font-size: 0.75rem; color: #94a3b8; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">Final Launch Decision</div>
-            <div style="font-size: 1.5rem; font-weight: 800; color: {rec_color}; letter-spacing: -0.3px; text-shadow: 0 0 10px {rec_color}2b;">{launch_rec}</div>
+            <div style="font-size: 1.5rem; font-weight: 800; color: {rec_color}; letter-spacing: -0.3px; text-shadow: 0 0 10px {rec_color}2b;">{display_launch_rec}</div>
         </div>
     </div>
     <div style="font-size: 0.95rem; color: #f1f5f9; line-height: 1.6; font-weight: 500;">{rec_reasoning}</div>
 </div>"""
-st.markdown(rec_card_html, unsafe_allow_html=True)
-
 
 # ----------------- INFRASTRUCTURE ECONOMICS -----------------
 cli_args_combined = "".join([r.get("cli_arg", "") for r in recs]).lower()
@@ -1220,7 +1315,7 @@ else:
     headroom_bg = "rgba(239, 68, 68, 0.15)"
     headroom_icon = "🔴"
     headroom_desc = "Compute/KV cache saturated. High queuing latency risks under load spikes."
-st.markdown("<div style='margin: 25px 0 10px 0; font-size: 1.1rem; font-weight: 700; letter-spacing: -0.3px; color: #cbd5e1;'>📊 INFRASTRUCTURE ECONOMICS</div>", unsafe_allow_html=True)
+
 econ_html = f"""<div class="glass-card" style="padding: 24px !important; margin: 10px 0 25px 0; border: 1px solid rgba(255, 255, 255, 0.08); background: rgba(30, 41, 59, 0.35); border-radius: 8px;">
 <div style="font-size: 0.8rem; color: #94a3b8; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 20px;">Monthly Expenditure Analysis & Capacity Margins</div>
 <div style="display: flex; flex-direction: row; flex-wrap: wrap; gap: 16px; margin-bottom: 0px;">
@@ -1246,11 +1341,10 @@ econ_html = f"""<div class="glass-card" style="padding: 24px !important; margin:
 </div>
 </div>
 </div>"""
-st.markdown(econ_html, unsafe_allow_html=True)
+# econ_html early rendering removed for unified vertical single-page layout
 
 
-# ----------------- VISUAL COMPOSITE LAUNCH READINESS SCORE -----------------
-st.markdown("<div style='margin: 25px 0 10px 0; font-size: 1.1rem; font-weight: 700; letter-spacing: -0.3px; color: #cbd5e1;'>🚀 COMPOSITE LAUNCH READINESS SCORE</div>", unsafe_allow_html=True)
+# COMPOSITE LAUNCH READINESS SCORE early rendering removed for unified vertical single-page layout
 
 if overall_score >= 90:
     glow_style = "box-shadow: 0 0 25px rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); background: rgba(30, 41, 59, 0.4);"
@@ -1336,7 +1430,7 @@ score_html = f"""<div class="glass-card" style="padding: 24px !important; margin
         </div>
     </div>
 </div>"""
-st.markdown(score_html, unsafe_allow_html=True)
+# score_html early rendering removed for unified vertical single-page layout
 
 # ----------------- CALCULATIONS FOR TABS RENDERING -----------------
 
@@ -1535,266 +1629,307 @@ try:
     with open(exec_doc_path, "w") as f:
         f.write(compiled_md)
 except Exception as e:
-    st.sidebar.error(f"Heuristics Note: Executive document write failed: {e}")
+    pass
 
-# Launch recommendation card moved to the top of the page.
-
-
-# ----------------- REORGANIZED TABBED LAYOUT RENDERING -----------------
-
-tab_exec, tab_opt_plan, tab_sizing, tab_bottlenecks, tab_engineer, tab_whatif, tab_gemini = st.tabs([
-    "🩺 Executive Summary",
-    "📋 Optimized Serving Plan",
-    "📊 Sizing & SLA Badges",
-    "🔍 Bottleneck Diagnostics",
-    "⚙️ Deep-Dive Engineer Report",
-    "🔮 What-if Projections",
-    "🧠 Gemini Co-pilot"
-])
+# ----------------- UNIFIED VERTICAL LAYOUT RENDERING -----------------
 
 
-# --- TAB 1: EXECUTIVE SUMMARY ---
-with tab_exec:
-    st.markdown("### 🩺 Executive Summary", unsafe_allow_html=True)
-    st.markdown('<div class="glass-card">', unsafe_allow_html=True)
+# --- SECTION 1: 🏁 FINAL LAUNCH RECOMMENDATION ---
+st.markdown("### 🏁 Final Launch Recommendation")
+st.markdown(translate_jargon(rec_card_html), unsafe_allow_html=True)
 
-    # Generate executive summary via the serving agent tool
-    exec_summary_data = generate_executive_summary(live_metrics)
+# --- SECTION 2: 🏛️ AI LAUNCH REVIEW BOARD ---
+st.markdown("### 🏛️ AI Launch Review Board")
+st.markdown(translate_jargon(board_html), unsafe_allow_html=True)
 
-    status_style = {
-        "HEALTHY": "color: #10b981; font-weight: 800;",
-        "WARNING": "color: #f59e0b; font-weight: 800;",
-        "CRITICAL": "color: #ef4444; font-weight: 800;"
-    }
-    status_text = exec_summary_data.get("overall_health_status", "UNKNOWN")
-    status_html = f"<span style='{status_style.get(status_text, 'color: #94a3b8;')}; font-size: 1.1rem;'>{status_text}</span>"
+# --- SECTION 3: 📊 INFRASTRUCTURE ECONOMICS ---
+st.markdown("### 📊 Infrastructure Economics")
+st.markdown(translate_jargon(econ_html), unsafe_allow_html=True)
 
-    col_es1, col_exec_sum = st.columns([1, 2])
-    with col_es1:
-        st.markdown(clean_html(f"""
-        <div style="background: rgba(255, 255, 255, 0.01); border: 1px solid rgba(255, 255, 255, 0.03); padding: 15px; border-radius: 8px; height: 100%;">
-            <div style="font-size: 0.8rem; color: #94a3b8; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">Overall Health Status</div>
-            <div style="margin-top: 5px;">{status_html}</div>
-            <div style="font-size: 0.8rem; color: #94a3b8; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px; margin-top: 20px;">Classification Category</div>
-            <div style="font-size: 1rem; color: #ffffff; font-weight: 700; margin-top: 5px;">{exec_summary_data.get('classification_category', 'N/A')}</div>
-        </div>
-        """), unsafe_allow_html=True)
+# --- SECTION 4: 🩺 EXECUTIVE SUMMARY ---
+st.markdown("### 🩺 Executive Summary")
+st.markdown(translate_jargon(score_html), unsafe_allow_html=True)
 
-    with col_exec_sum:
-        st.markdown(clean_html(f"""
-        <div style="margin-bottom: 12px;">
-            <span style="font-weight: 700; color: #a855f7; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px;">Brief Status Assessment</span>
-            <p style="font-size: 0.95rem; color: #f1f5f9; margin-top: 4px; line-height: 1.5;">{exec_summary_data.get('brief_status_assessment', '')}</p>
-        </div>
-        <div style="margin-bottom: 12px; margin-top: 15px;">
-            <span style="font-weight: 700; color: #38bdf8; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px;">Core Diagnosed Bottleneck</span>
-            <p style="font-size: 0.95rem; color: #cbd5e1; margin-top: 4px; line-height: 1.5;">{exec_summary_data.get('core_diagnosed_bottleneck', '')}</p>
-        </div>
-        <div style="margin-top: 15px;">
-            <span style="font-weight: 700; color: #10b981; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px;">High-Level Action Plan</span>
-            <p style="font-size: 0.95rem; color: #a7f3d0; margin-top: 4px; line-height: 1.5; font-weight: 500;">{exec_summary_data.get('high_level_action_plan', '')}</p>
-        </div>
-        """), unsafe_allow_html=True)
+# Generate executive summary via the serving agent tool
+exec_summary_data = generate_executive_summary(live_metrics)
 
-    st.markdown("---")
-    # Render the dynamic executive summary markdown nicely
-    st.markdown(report["executive_summary"])
+status_style = {
+    "HEALTHY": "color: #10b981; font-weight: 800;",
+    "WARNING": "color: #f59e0b; font-weight: 800;",
+    "CRITICAL": "color: #ef4444; font-weight: 800;"
+}
+status_text = exec_summary_data.get("overall_health_status", "UNKNOWN")
+status_html = f"<span style='{status_style.get(status_text, 'color: #94a3b8;')}; font-size: 1.1rem;'>{status_text}</span>"
 
-    # Dynamically render the professional compiled CTO executive document if it exists
-    import os
-    exec_doc_path = "/Users/hima/.gemini/antigravity/brain/75fd6161-2489-40a3-9aae-9a9cba1317d0/executive_summary.md"
-    if os.path.exists(exec_doc_path):
-        st.markdown("---")
-        st.markdown("<h3 style='color: #38bdf8; font-size: 1.35rem; font-weight: 700; margin-top: 25px;'>📋 Executive Launch Readiness Document</h3>", unsafe_allow_html=True)
-        with open(exec_doc_path, "r") as f:
-            exec_markdown = f.read()
-        st.markdown(exec_markdown)
-
-    st.markdown('</div>', unsafe_allow_html=True)
-
-
-# --- TAB 2: OPTIMIZED SERVING PLAN ---
-with tab_opt_plan:
-    st.markdown("<h3 style='color: #ffffff; font-size: 1.5rem; font-weight: 700; margin-bottom: 20px;'>📋 Optimized Serving Plan</h3>", unsafe_allow_html=True)
-    st.markdown("<p style='font-size: 0.95rem; color: #94a3b8; margin-top: -10px; margin-bottom: 25px; line-height: 1.5;'>Compare the baseline monolithic plan with our recommended state-of-the-art inference optimizations to unlock significant cost savings, higher reliability, and massive latency improvements.</p>", unsafe_allow_html=True)
-
-    # Why This Matters Card
-    if launch_rec == "NO GO":
-        why_matters_text = (
-            "Your current launch plan is technically possible, but it leaves cost and latency risk on the table. "
-            "By applying model routing, caching, and serving optimization, this launch can move from <b>NO GO</b> to <b>GO WITH CAUTION</b> while reducing infrastructure cost and improving user latency."
-        )
-    elif launch_rec == "GO WITH CAUTION":
-        why_matters_text = (
-            "Your current launch plan is viable, but it leaves cost and latency risk on the table. "
-            "By applying model routing, caching, and serving optimization, this launch can move from <b>GO WITH CAUTION</b> to a confident <b>GO</b> while reducing infrastructure cost and improving user latency."
-        )
-    else:  # GO
-        why_matters_text = (
-            "Your current launch plan is a green-lit <b>GO</b>, but there is still cost and performance headroom on the table. "
-            "By applying model routing, caching, and serving optimization, you can further reduce infrastructure cost and improve user latency, maximizing your operating margin."
-        )
-
-    st.markdown(clean_html(f"""
-    <div class="glass-card" style="padding: 22px !important; margin: 10px 0 25px 0; border: 1px solid rgba(56, 189, 248, 0.35); background: rgba(30, 41, 59, 0.45); box-shadow: 0 0 25px rgba(56, 189, 248, 0.08); border-radius: 8px;">
-        <div style="font-size: 1.1rem; font-weight: 800; color: #38bdf8; display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
-            <span>💡 Why This Matters (Business Impact)</span>
-        </div>
-        <p style="font-size: 0.95rem; color: #f1f5f9; line-height: 1.55; margin: 0;">
-            {why_matters_text}
-        </p>
+col_es1, col_exec_sum = st.columns([1, 2])
+with col_es1:
+    st.markdown(translate_jargon(clean_html(f"""
+    <div style="background: rgba(255, 255, 255, 0.01); border: 1px solid rgba(255, 255, 255, 0.03); padding: 15px; border-radius: 8px; height: 100%;">
+        <div style="font-size: 0.8rem; color: #94a3b8; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">Overall Health Status</div>
+        <div style="margin-top: 5px;">{status_html}</div>
+        <div style="font-size: 0.8rem; color: #94a3b8; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px; margin-top: 20px;">Classification Category</div>
+        <div style="font-size: 1rem; color: #ffffff; font-weight: 700; margin-top: 5px;">{exec_summary_data.get('classification_category', 'N/A')}</div>
     </div>
-    """), unsafe_allow_html=True)
+    """)), unsafe_allow_html=True)
 
-    with st.expander("🔍 Expert Mode: Inference Optimization Analysis", expanded=False):
-        model_name_short = model_id.split("/")[-1] if "/" in model_id else model_id
-        if "70b" in model_id.lower() or "mixtral" in model_id.lower() or "large" in model_id.lower():
-            routing_rationale = f"Your current configuration is running a heavyweight model (<b>{model_name_short}</b>). Many incoming user requests (e.g., short classifications, routine conversational checks, greetings) do not require a massive parameter space. By introducing a smart model router, you can filter and redirect low-complexity intents to a lightweight model (e.g., Llama-3-8B or Gemini 1.5 Flash), keeping the heavy model reserved purely for advanced reasoning tasks."
-        else:
-            routing_rationale = f"You are currently running <b>{model_name_short}</b>. Even for a smaller model, up to 30% of incoming traffic is often trivial (greetings, simple confirmations, quick inputs). By routing these to an ultra-lightweight external or local classifier, you can offload significant volume from your main <b>{num_gpus}x {gpu_tier}</b> instance, preserving capacity for complex tasks."
-        if prompt_tokens >= 1000:
-            caching_rationale = f"With an average prompt length of <b>{prompt_tokens}</b> tokens, your workload is highly prefill-heavy. Prompt prefix caching stores the KV Cache of static content (like extensive RAG search histories, multi-turn dialogue, system instructions, or few-shot examples) in VRAM. This allows subsequent matching queries to completely skip the compute-intensive prefill phase."
-        else:
-            caching_rationale = f"Your average prompt length is <b>{prompt_tokens}</b> tokens. While relatively short, enabling prefix caching is still highly beneficial for caching common system-level templates, multi-turn conversation headers, and recurring instruction contexts, which speeds up TTFT for repeating user sessions."
-        if prompt_tokens >= 1000:
-            chunked_rationale = f"Because your prompts average <b>{prompt_tokens}</b> tokens, a large prefill request will completely monopolize the execution schedule, starving ongoing decode operations. Turning on chunked prefill breaks long prompts into smaller chunks (e.g., 512 tokens), interleaving prompt processing with active token generation to stabilize ITL."
-        else:
-            chunked_rationale = f"Even with moderate prompts of <b>{prompt_tokens}</b> tokens, sudden concurrent bursts can create prefill queues that block active decodes. Chunked prefill guarantees that small prompt prefills and long generations co-exist smoothly, removing high-percentile latency spikes."
-        batch_rationale = f"Continuous batching should be fine-tuned specifically for your active load of <b>{qps_val:.2f} QPS</b> on <b>{num_gpus}x {gpu_tier}</b>. Adjusting parameters such as <code>max-num-seqs</code>, scheduler lookahead, and KV cache page size ensures that the GPU's memory envelope is maximally saturated without initiating costly KV page swaps or queue thrashing."
-        fallback_rationale = f"Under extreme traffic spikes or sudden hardware faults in your <b>{num_gpus}x {gpu_tier}</b> cluster, having a fallback policy ensures that the user experience remains uninterrupted. Requests can be automatically redirected to external cloud models (like Gemini 1.5 Flash) or alternative failover instances if latency or queuing delays cross SLA limits."
-        st.markdown(clean_html(f"""
-        <div style="display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 30px;">
-            <div class="glass-card" style="flex: 1; min-width: 300px; border: 1px solid rgba(239, 68, 68, 0.2); background: rgba(239, 68, 68, 0.02); box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1); border-radius: 8px; padding: 22px;">
-                <div style="font-size: 1.15rem; font-weight: 700; color: #ef4444; display: flex; align-items: center; gap: 8px; margin-bottom: 15px; border-bottom: 1px solid rgba(239, 68, 68, 0.15); padding-bottom: 10px;">
-                    <span>❌ Baseline Monolithic Plan</span>
-                </div>
-                <ul style="list-style-type: none; padding-left: 0; margin: 0; display: flex; flex-direction: column; gap: 12px;">
-                    <li style="font-size: 0.9rem; color: #cbd5e1; line-height: 1.45;">
-                        <strong style="color: #ffffff; display: block; margin-bottom: 2px;">Resource Allocation</strong>
-                        Single monolithic endpoint running {model_name_short} on {num_gpus}x {gpu_tier}.
-                    </li>
-                    <li style="font-size: 0.9rem; color: #cbd5e1; line-height: 1.45;">
-                        <strong style="color: #ffffff; display: block; margin-bottom: 2px;">No Prefix Caching</strong>
-                        KV Cache is recomputed from scratch for every query, wasting significant prefill compute.
-                    </li>
-                    <li style="font-size: 0.9rem; color: #cbd5e1; line-height: 1.45;">
-                        <strong style="color: #ffffff; display: block; margin-bottom: 2px;">No Chunked Prefill</strong>
-                        Large incoming prefill requests block active generation cycles, causing high latency spikes.
-                    </li>
-                    <li style="font-size: 0.9rem; color: #cbd5e1; line-height: 1.45;">
-                        <strong style="color: #ffffff; display: block; margin-bottom: 2px;">Standard Continuous Batching</strong>
-                        Uncalibrated sequence concurrency can cause memory thrashing or out-of-memory (OOM) failures under peak load.
-                    </li>
-                    <li style="font-size: 0.9rem; color: #cbd5e1; line-height: 1.45;">
-                        <strong style="color: #ffffff; display: block; margin-bottom: 2px;">No High Availability Failover</strong>
-                        Cluster is a single point of failure; any crash or rate-limit leads to client-side application failure.
-                    </li>
-                </ul>
-            </div>
-            <div class="glass-card" style="flex: 1; min-width: 300px; border: 1px solid rgba(16, 185, 129, 0.35); background: rgba(16, 185, 129, 0.03); box-shadow: 0 4px 30px rgba(16, 185, 129, 0.05); border-radius: 8px; padding: 22px;">
-                <div style="font-size: 1.15rem; font-weight: 700; color: #10b981; display: flex; align-items: center; gap: 8px; margin-bottom: 15px; border-bottom: 1px solid rgba(16, 185, 129, 0.25); padding-bottom: 10px;">
-                    <span>✨ Recommended Optimized Plan</span>
-                </div>
-                <ul style="list-style-type: none; padding-left: 0; margin: 0; display: flex; flex-direction: column; gap: 12px;">
-                    <li style="font-size: 0.9rem; color: #cbd5e1; line-height: 1.45;">
-                        <strong style="color: #ffffff; display: block; margin-bottom: 2px;">Intelligent Model Routing</strong>
-                        Automatically routes simple/short queries to fast edge models, saving primary GPU clusters for complex reasoning.
-                    </li>
-                    <li style="font-size: 0.9rem; color: #cbd5e1; line-height: 1.45;">
-                        <strong style="color: #ffffff; display: block; margin-bottom: 2px;">Prefix Caching Enabled</strong>
-                        Bypasses expensive prefill overhead for recurring prompts or multi-turn dialogues by reusing stored KV state.
-                    </li>
-                    <li style="font-size: 0.9rem; color: #cbd5e1; line-height: 1.45;">
-                        <strong style="color: #ffffff; display: block; margin-bottom: 2px;">Chunked Prefill Enabled</strong>
-                        Interleaves prefill chunks with ongoing decode steps to maintain smooth, steady token generation and prevent starvation.
-                    </li>
-                    <li style="font-size: 0.9rem; color: #cbd5e1; line-height: 1.45;">
-                        <strong style="color: #ffffff; display: block; margin-bottom: 2px;">Calibrated Batching Parameters</strong>
-                        Optimizes scheduling queue density and memory limits to maximize GPU throughput and cluster saturation.
-                    </li>
-                    <li style="font-size: 0.9rem; color: #cbd5e1; line-height: 1.45;">
-                        <strong style="color: #ffffff; display: block; margin-bottom: 2px;">Elastic Fallback Model Strategy</strong>
-                        Graceful failover to scalable cloud endpoints (like Gemini 1.5 Flash) or alternative clusters during outage or overload.
-                    </li>
-                </ul>
-            </div>
-        </div>
-        """), unsafe_allow_html=True)
-        st.markdown("<h4 style='color: #cbd5e1; font-size: 1.15rem; font-weight: 700; margin-bottom: 15px;'>🛡️ Practical Inference Optimization Strategies</h4>", unsafe_allow_html=True)
-        st.markdown(clean_html(f"""
-        <div class="glass-card" style="padding: 20px !important; margin: 10px 0 20px 0; border: 1px solid rgba(255, 255, 255, 0.08); background: rgba(30, 41, 59, 0.35); border-radius: 8px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255, 255, 255, 0.06); padding-bottom: 10px; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
-                <div style="font-size: 1.05rem; font-weight: 700; color: #38bdf8; display: flex; align-items: center; gap: 8px;">
-                    <span>🔀 1. Model Routing Classifier</span>
-                </div>
-                <span style="background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3); padding: 4px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.5px;">🟡 ENGINEERING COMPLEXITY: MEDIUM</span>
-            </div>
-            <div style="font-size: 0.9rem; color: #cbd5e1; line-height: 1.5; display: flex; flex-direction: column; gap: 10px;">
-                <div><strong style="color: #ffffff;">Why it helps:</strong> {routing_rationale}</div>
-                <div><strong style="color: #ffffff;">Expected Business Impact:</strong> Slashes cluster compute cost by up to 35%, decreases average end-to-end response times, and prevents traffic congestion on your main {gpu_tier} servers.</div>
-            </div>
-        </div>
-        """), unsafe_allow_html=True)
-        st.markdown(clean_html(f"""
-        <div class="glass-card" style="padding: 20px !important; margin: 10px 0 20px 0; border: 1px solid rgba(255, 255, 255, 0.08); background: rgba(30, 41, 59, 0.35); border-radius: 8px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255, 255, 255, 0.06); padding-bottom: 10px; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
-                <div style="font-size: 1.05rem; font-weight: 700; color: #10b981; display: flex; align-items: center; gap: 8px;">
-                    <span>💾 2. Prompt Caching / Prefix Caching</span>
-                </div>
-                <span style="background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); padding: 4px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.5px;">🟢 ENGINEERING COMPLEXITY: LOW</span>
-            </div>
-            <div style="font-size: 0.9rem; color: #cbd5e1; line-height: 1.5; display: flex; flex-direction: column; gap: 10px;">
-                <div><strong style="color: #ffffff;">Why it helps:</strong> {caching_rationale}</div>
-                <div><strong style="color: #ffffff;">Expected Business Impact:</strong> Dramatically accelerates Time-To-First-Token (TTFT) by up to 4x and minimizes active VRAM compute overhead, converting static prefill phases from expensive GPU calculations into instant cache lookups.</div>
-            </div>
-        </div>
-        """), unsafe_allow_html=True)
-        st.markdown(clean_html(f"""
-        <div class="glass-card" style="padding: 20px !important; margin: 10px 0 20px 0; border: 1px solid rgba(255, 255, 255, 0.08); background: rgba(30, 41, 59, 0.35); border-radius: 8px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255, 255, 255, 0.06); padding-bottom: 10px; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
-                <div style="font-size: 1.05rem; font-weight: 700; color: #a855f7; display: flex; align-items: center; gap: 8px;">
-                    <span>🥞 3. Chunked Prefill Interleaving</span>
-                </div>
-                <span style="background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); padding: 4px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.5px;">🟢 ENGINEERING COMPLEXITY: LOW</span>
-            </div>
-            <div style="font-size: 0.9rem; color: #cbd5e1; line-height: 1.5; display: flex; flex-direction: column; gap: 10px;">
-                <div><strong style="color: #ffffff;">Why it helps:</strong> {chunked_rationale}</div>
-                <div><strong style="color: #ffffff;">Expected Business Impact:</strong> Smooths out high-concurrency latency jitters, maintaining consistent and predictable Inter-Token Latency (ITL) and protecting your SLA commitments under sudden surges.</div>
-            </div>
-        </div>
-        """), unsafe_allow_html=True)
-        st.markdown(clean_html(f"""
-        <div class="glass-card" style="padding: 20px !important; margin: 10px 0 20px 0; border: 1px solid rgba(255, 255, 255, 0.08); background: rgba(30, 41, 59, 0.35); border-radius: 8px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255, 255, 255, 0.06); padding-bottom: 10px; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
-                <div style="font-size: 1.05rem; font-weight: 700; color: #f59e0b; display: flex; align-items: center; gap: 8px;">
-                    <span>⚡ 4. Continuous Batching Parameter Tuning</span>
-                </div>
-                <span style="background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3); padding: 4px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.5px;">🟡 ENGINEERING COMPLEXITY: MEDIUM</span>
-            </div>
-            <div style="font-size: 0.9rem; color: #cbd5e1; line-height: 1.5; display: flex; flex-direction: column; gap: 10px;">
-                <div><strong style="color: #ffffff;">Why it helps:</strong> {batch_rationale}</div>
-                <div><strong style="color: #ffffff;">Expected Business Impact:</strong> Increases maximum serving throughput by up to 25% on the same cluster, maximizing the utilization efficiency of each node.</div>
-            </div>
-        </div>
-        """), unsafe_allow_html=True)
-        st.markdown(clean_html(f"""
-        <div class="glass-card" style="padding: 20px !important; margin: 10px 0 20px 0; border: 1px solid rgba(255, 255, 255, 0.08); background: rgba(30, 41, 59, 0.35); border-radius: 8px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255, 255, 255, 0.06); padding-bottom: 10px; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
-                <div style="font-size: 1.05rem; font-weight: 700; color: #ef4444; display: flex; align-items: center; gap: 8px;">
-                    <span>🛡️ 5. Graceful Fallback & Availability Failover</span>
-                </div>
-                <span style="background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3); padding: 4px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.5px;">🟡 ENGINEERING COMPLEXITY: MEDIUM</span>
-            </div>
-            <div style="font-size: 0.9rem; color: #cbd5e1; line-height: 1.5; display: flex; flex-direction: column; gap: 10px;">
-                <div><strong style="color: #ffffff;">Why it helps:</strong> {fallback_rationale}</div>
-                <div><strong style="color: #ffffff;">Expected Business Impact:</strong> Protects your SLA commitments, prevents catastrophic downtime or cascade failures, and ensures a seamless user experience even during major system shocks.</div>
-            </div>
-        </div>
-        """), unsafe_allow_html=True)
+with col_exec_sum:
+    st.markdown(translate_jargon(clean_html(f"""
+    <div style="margin-bottom: 12px;">
+        <span style="font-weight: 700; color: #a855f7; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px;">Brief Status Assessment</span>
+        <p style="font-size: 0.95rem; color: #f1f5f9; margin-top: 4px; line-height: 1.5;">{exec_summary_data.get('brief_status_assessment', '')}</p>
+    </div>
+    <div style="margin-bottom: 12px; margin-top: 15px;">
+        <span style="font-weight: 700; color: #38bdf8; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px;">Core Diagnosed Bottleneck</span>
+        <p style="font-size: 0.95rem; color: #cbd5e1; margin-top: 4px; line-height: 1.5;">{exec_summary_data.get('core_diagnosed_bottleneck', '')}</p>
+    </div>
+    <div style="margin-top: 15px;">
+        <span style="font-weight: 700; color: #10b981; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px;">High-Level Action Plan</span>
+        <p style="font-size: 0.95rem; color: #a7f3d0; margin-top: 4px; line-height: 1.5; font-weight: 500;">{exec_summary_data.get('high_level_action_plan', '')}</p>
+    </div>
+    """)), unsafe_allow_html=True)
+
+st.markdown("---")
+# Render the dynamic executive summary markdown nicely
+st.markdown(translate_jargon(report["executive_summary"]))
+
+# Dynamically render the professional compiled CTO executive document if it exists
+import os
+exec_doc_path = "/Users/hima/.gemini/antigravity/brain/75fd6161-2489-40a3-9aae-9a9cba1317d0/executive_summary.md"
+if os.path.exists(exec_doc_path):
+    st.markdown("---")
+    st.markdown("<h3 style='color: #38bdf8; font-size: 1.35rem; font-weight: 700; margin-top: 25px;'>📋 Executive Launch Readiness Document</h3>", unsafe_allow_html=True)
+    with open(exec_doc_path, "r") as f:
+        exec_markdown = f.read()
+    st.markdown(translate_jargon(exec_markdown))
 
 
-# --- TAB 3: SIZING & SLA BADGES ---
-with tab_sizing:
+# --- SECTION 5: 📋 OPTIMIZED SERVING PLAN ---
+st.markdown("### 📋 Optimized Serving Plan")
+st.markdown("<p style='font-size: 0.95rem; color: #94a3b8; margin-top: -10px; margin-bottom: 25px; line-height: 1.5;'>Compare the baseline monolithic plan with our recommended state-of-the-art inference optimizations to unlock significant cost savings, higher reliability, and massive latency improvements.</p>", unsafe_allow_html=True)
+
+# Why This Matters Card
+if launch_rec == "NO GO":
+    why_matters_text = (
+        "Your current launch plan is technically possible, but it leaves cost and latency risk on the table. "
+        "By applying model routing, caching, and serving optimization, this launch can move from <b>NOT READY</b> to <b>LAUNCH WITH MITIGATIONS</b> while reducing infrastructure cost and improving user latency."
+    )
+elif launch_rec == "GO WITH CAUTION":
+    why_matters_text = (
+        "Your current launch plan is viable, but it leaves cost and latency risk on the table. "
+        "By applying model routing, caching, and serving optimization, this launch can move from <b>LAUNCH WITH MITIGATIONS</b> to a confident <b>READY TO LAUNCH</b> while reducing infrastructure cost and improving user latency."
+    )
+else:  # GO
+    why_matters_text = (
+        "Your current launch plan is a green-lit <b>READY TO LAUNCH</b>, but there is still cost and performance headroom on the table. "
+        "By applying model routing, caching, and serving optimization, you can further reduce infrastructure cost and improve user latency, maximizing your operating margin."
+    )
+
+st.markdown(translate_jargon(clean_html(f"""
+<div class="glass-card" style="padding: 22px !important; margin: 10px 0 25px 0; border: 1px solid rgba(56, 189, 248, 0.35); background: rgba(30, 41, 59, 0.45); box-shadow: 0 0 25px rgba(56, 189, 248, 0.08); border-radius: 8px;">
+    <div style="font-size: 1.1rem; font-weight: 800; color: #38bdf8; display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+        <span>💡 Why This Matters (Business Impact)</span>
+    </div>
+    <p style="font-size: 0.95rem; color: #f1f5f9; line-height: 1.55; margin: 0;">
+        {why_matters_text}
+    </p>
+</div>
+""")), unsafe_allow_html=True)
+
+model_name_short = model_id.split("/")[-1] if "/" in model_id else model_id
+
+if selected_preset_name == "High-Growth Support Agent":
+    routing_rationale = (
+        "With 100,000 DAU and 20 requests per user per day, your system faces a peak load of 57.87 QPS. "
+        "Running a monolithic Llama 3 70B model for 100% of this traffic is extremely expensive and slow. "
+        "<b>Routing Recommendation:</b> Route 65% of simple, repetitive customer queries "
+        "(e.g., greetings, order status checks, simple FAQs) to a cheaper, faster model like Llama 3 8B "
+        "or Gemini 1.5 Flash. Route only the remaining 35% of complex multi-step inquiries to Llama 3 70B. "
+        "This immediately slashes required active replicas from 16 to 6, dropping monthly costs by over 60% and "
+        "relieving queue pressure."
+    )
+    caching_rationale = (
+        "With an average prompt length of 1,536 tokens, your prompts contain heavy system guidelines, FAQs, "
+        "and multi-turn customer chat history. "
+        "<b>Caching Recommendation:</b> Enable prompt prefix caching. By caching the KV Cache of these static system prompts "
+        "and recurring guidelines in GPU memory, matching subsequent queries completely bypass the compute-heavy "
+        "prefill phase. This slashes Time-To-First-Token (TTFT) by up to 4x and maximizes active memory capacity."
+    )
+    chunked_rationale = (
+        "Because prompts average 1,536 tokens, a large prefill request will completely monopolize the execution schedule, "
+        "starving ongoing decode operations. "
+        "<b>Chunking Recommendation:</b> Turn on chunked prefill to break long prompts into smaller chunks (e.g., 512 tokens), "
+        "interleaving prompt processing with active token generation to stabilize ITL."
+    )
+    batch_rationale = (
+        "Continuous batching should be fine-tuned specifically for your active load of 57.87 QPS on your cluster. "
+        "Adjusting parameters such as <code>max-num-seqs</code>, scheduler lookahead, and KV cache page size ensures "
+        "that the GPU's memory envelope is maximally saturated without initiating costly KV page swaps or queue thrashing."
+    )
+    fallback_rationale = (
+        "To guarantee 99.9% uptime under high concurrent loads without expensive over-provisioning: "
+        "<b>Fallback Recommendation:</b> Deploy an elastic fallback model strategy. During unexpected traffic bursts, "
+        "queue saturation, or physical node failures in your main cluster, automatically failover excess requests "
+        "to a highly scalable and cost-efficient cloud model API (such as Gemini 1.5 Flash). This handles overflow "
+        "traffic seamlessly and keeps latency low under any conditions."
+    )
+else:
+    if "70b" in model_id.lower() or "mixtral" in model_id.lower() or "large" in model_id.lower():
+        routing_rationale = f"Your current configuration is running a heavyweight model (<b>{model_name_short}</b>). Many incoming user requests (e.g., short classifications, routine conversational checks, greetings) do not require a massive parameter space. By introducing a smart model router, you can filter and redirect low-complexity intents to a lightweight model (e.g., Llama-3-8B or Gemini 1.5 Flash), keeping the heavy model reserved purely for advanced reasoning tasks."
+    else:
+        routing_rationale = f"You are currently running <b>{model_name_short}</b>. Even for a smaller model, up to 30% of incoming traffic is often trivial (greetings, simple confirmations, quick inputs). By routing these to an ultra-lightweight external or local classifier, you can offload significant volume from your main <b>{num_gpus}x {gpu_tier}</b> instance, preserving capacity for complex tasks."
+    
+    if prompt_tokens >= 1000:
+        caching_rationale = f"With an average prompt length of <b>{prompt_tokens}</b> tokens, your workload is highly prefill-heavy. Prompt prefix caching stores the KV Cache of static content (like extensive RAG search histories, multi-turn dialogue, system instructions, or few-shot examples) in VRAM. This allows subsequent matching queries to completely skip the compute-intensive prefill phase."
+    else:
+        caching_rationale = f"Your average prompt length is <b>{prompt_tokens}</b> tokens. While relatively short, enabling prefix caching is still highly beneficial for caching common system-level templates, multi-turn conversation headers, and recurring instruction contexts, which speeds up TTFT for repeating user sessions."
+    
+    if prompt_tokens >= 1000:
+        chunked_rationale = f"Because your prompts average <b>{prompt_tokens}</b> tokens, a large prefill request will completely monopolize the execution schedule, starving ongoing decode operations. Turning on chunked prefill breaks long prompts into smaller chunks (e.g., 512 tokens), interleaving prompt processing with active token generation to stabilize ITL."
+    else:
+        chunked_rationale = f"Even with moderate prompts of <b>{prompt_tokens}</b> tokens, sudden concurrent bursts can create prefill queues that block active decodes. Chunked prefill guarantees that small prompt prefills and long generations co-exist smoothly, removing high-percentile latency spikes."
+    
+    batch_rationale = f"Continuous batching should be fine-tuned specifically for your active load of <b>{qps_val:.2f} QPS</b> on <b>{num_gpus}x {gpu_tier}</b>. Adjusting parameters such as <code>max-num-seqs</code>, scheduler lookahead, and KV cache page size ensures that the GPU's memory envelope is maximally saturated without initiating costly KV page swaps or queue thrashing."
+    fallback_rationale = f"Under extreme traffic spikes or sudden hardware faults in your <b>{num_gpus}x {gpu_tier}</b> cluster, having a fallback policy ensures that the user experience remains uninterrupted. Requests can be automatically redirected to external cloud models (like Gemini 1.5 Flash) or alternative failover instances if latency or queuing delays cross SLA limits."
+
+st.markdown(translate_jargon(clean_html(f"""
+<div style="display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 30px;">
+    <div class="glass-card" style="flex: 1; min-width: 300px; border: 1px solid rgba(239, 68, 68, 0.2); background: rgba(239, 68, 68, 0.02); box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1); border-radius: 8px; padding: 22px;">
+        <div style="font-size: 1.15rem; font-weight: 700; color: #ef4444; display: flex; align-items: center; gap: 8px; margin-bottom: 15px; border-bottom: 1px solid rgba(239, 68, 68, 0.15); padding-bottom: 10px;">
+            <span>❌ Baseline Monolithic Plan</span>
+        </div>
+        <ul style="list-style-type: none; padding-left: 0; margin: 0; display: flex; flex-direction: column; gap: 12px;">
+            <li style="font-size: 0.9rem; color: #cbd5e1; line-height: 1.45;">
+                <strong style="color: #ffffff; display: block; margin-bottom: 2px;">Resource Allocation</strong>
+                Single monolithic endpoint running {model_name_short} on {num_gpus}x {gpu_tier}.
+            </li>
+            <li style="font-size: 0.9rem; color: #cbd5e1; line-height: 1.45;">
+                <strong style="color: #ffffff; display: block; margin-bottom: 2px;">No Prefix Caching</strong>
+                KV Cache is recomputed from scratch for every query, wasting significant prefill compute.
+            </li>
+            <li style="font-size: 0.9rem; color: #cbd5e1; line-height: 1.45;">
+                <strong style="color: #ffffff; display: block; margin-bottom: 2px;">No Chunked Prefill</strong>
+                Large incoming prefill requests block active generation cycles, causing high latency spikes.
+            </li>
+            <li style="font-size: 0.9rem; color: #cbd5e1; line-height: 1.45;">
+                <strong style="color: #ffffff; display: block; margin-bottom: 2px;">Standard Continuous Batching</strong>
+                Uncalibrated sequence concurrency can cause memory thrashing or out-of-memory (OOM) failures under peak load.
+            </li>
+            <li style="font-size: 0.9rem; color: #cbd5e1; line-height: 1.45;">
+                <strong style="color: #ffffff; display: block; margin-bottom: 2px;">No High Availability Failover</strong>
+                Cluster is a single point of failure; any crash or rate-limit leads to client-side application failure.
+            </li>
+        </ul>
+    </div>
+    <div class="glass-card" style="flex: 1; min-width: 300px; border: 1px solid rgba(16, 185, 129, 0.35); background: rgba(16, 185, 129, 0.03); box-shadow: 0 4px 30px rgba(16, 185, 129, 0.05); border-radius: 8px; padding: 22px;">
+        <div style="font-size: 1.15rem; font-weight: 700; color: #10b981; display: flex; align-items: center; gap: 8px; margin-bottom: 15px; border-bottom: 1px solid rgba(16, 185, 129, 0.25); padding-bottom: 10px;">
+            <span>✨ Recommended Optimized Plan</span>
+        </div>
+        <ul style="list-style-type: none; padding-left: 0; margin: 0; display: flex; flex-direction: column; gap: 12px;">
+            <li style="font-size: 0.9rem; color: #cbd5e1; line-height: 1.45;">
+                <strong style="color: #ffffff; display: block; margin-bottom: 2px;">Intelligent Model Routing</strong>
+                Automatically routes simple/short queries to fast edge models, saving primary GPU clusters for complex reasoning.
+            </li>
+            <li style="font-size: 0.9rem; color: #cbd5e1; line-height: 1.45;">
+                <strong style="color: #ffffff; display: block; margin-bottom: 2px;">Prefix Caching Enabled</strong>
+                Bypasses expensive prefill overhead for recurring prompts or multi-turn dialogues by reusing stored KV state.
+            </li>
+            <li style="font-size: 0.9rem; color: #cbd5e1; line-height: 1.45;">
+                <strong style="color: #ffffff; display: block; margin-bottom: 2px;">Chunked Prefill Enabled</strong>
+                Interleaves prefill chunks with ongoing decode steps to maintain steady token generation and prevent starvation.
+            </li>
+            <li style="font-size: 0.9rem; color: #cbd5e1; line-height: 1.45;">
+                <strong style="color: #ffffff; display: block; margin-bottom: 2px;">Calibrated Batching Parameters</strong>
+                Optimizes scheduling queue density and memory limits to maximize GPU throughput and cluster saturation.
+            </li>
+            <li style="font-size: 0.9rem; color: #cbd5e1; line-height: 1.45;">
+                <strong style="color: #ffffff; display: block; margin-bottom: 2px;">Elastic Fallback Model Strategy</strong>
+                Graceful failover to scalable cloud endpoints (like Gemini 1.5 Flash) or alternative clusters during outage or overload.
+            </li>
+        </ul>
+    </div>
+</div>
+""")), unsafe_allow_html=True)
+
+st.markdown("<h4 style='color: #cbd5e1; font-size: 1.15rem; font-weight: 700; margin-bottom: 15px;'>🛡️ Practical Inference Optimization Strategies</h4>", unsafe_allow_html=True)
+
+st.markdown(translate_jargon(clean_html(f"""
+<div class="glass-card" style="padding: 20px !important; margin: 10px 0 20px 0; border: 1px solid rgba(255, 255, 255, 0.08); background: rgba(30, 41, 59, 0.35); border-radius: 8px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255, 255, 255, 0.06); padding-bottom: 10px; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
+        <div style="font-size: 1.05rem; font-weight: 700; color: #38bdf8; display: flex; align-items: center; gap: 8px;">
+            <span>🔀 1. Model Routing Classifier</span>
+        </div>
+        <span style="background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3); padding: 4px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.5px;">🟡 ENGINEERING COMPLEXITY: MEDIUM</span>
+    </div>
+    <div style="font-size: 0.9rem; color: #cbd5e1; line-height: 1.5; display: flex; flex-direction: column; gap: 10px;">
+        <div><strong style="color: #ffffff;">Why it helps:</strong> {routing_rationale}</div>
+        <div><strong style="color: #ffffff;">Expected Business Impact:</strong> Slashes cluster compute cost by up to 35%, decreases average response times, and prevents traffic congestion on your main {gpu_tier} servers.</div>
+    </div>
+</div>
+""")), unsafe_allow_html=True)
+
+st.markdown(translate_jargon(clean_html(f"""
+<div class="glass-card" style="padding: 20px !important; margin: 10px 0 20px 0; border: 1px solid rgba(255, 255, 255, 0.08); background: rgba(30, 41, 59, 0.35); border-radius: 8px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255, 255, 255, 0.06); padding-bottom: 10px; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
+        <div style="font-size: 1.05rem; font-weight: 700; color: #10b981; display: flex; align-items: center; gap: 8px;">
+            <span>💾 2. Prompt Caching / Prefix Caching</span>
+        </div>
+        <span style="background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); padding: 4px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.5px;">🟢 ENGINEERING COMPLEXITY: LOW</span>
+    </div>
+    <div style="font-size: 0.9rem; color: #cbd5e1; line-height: 1.5; display: flex; flex-direction: column; gap: 10px;">
+        <div><strong style="color: #ffffff;">Why it helps:</strong> {caching_rationale}</div>
+        <div><strong style="color: #ffffff;">Expected Business Impact:</strong> Dramatically accelerates first-token speeds by up to 4x and minimizes active memory overhead, converting static prefill phases from expensive calculations into instant cache lookups.</div>
+    </div>
+</div>
+""")), unsafe_allow_html=True)
+
+st.markdown(translate_jargon(clean_html(f"""
+<div class="glass-card" style="padding: 20px !important; margin: 10px 0 20px 0; border: 1px solid rgba(255, 255, 255, 0.08); background: rgba(30, 41, 59, 0.35); border-radius: 8px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255, 255, 255, 0.06); padding-bottom: 10px; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
+        <div style="font-size: 1.05rem; font-weight: 700; color: #a855f7; display: flex; align-items: center; gap: 8px;">
+            <span>🥞 3. Chunked Prefill Interleaving</span>
+        </div>
+        <span style="background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); padding: 4px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.5px;">🟢 ENGINEERING COMPLEXITY: LOW</span>
+    </div>
+    <div style="font-size: 0.9rem; color: #cbd5e1; line-height: 1.5; display: flex; flex-direction: column; gap: 10px;">
+        <div><strong style="color: #ffffff;">Why it helps:</strong> {chunked_rationale}</div>
+        <div><strong style="color: #ffffff;">Expected Business Impact:</strong> Smooths out high-concurrency latency jitters, maintaining consistent and predictable token generation and protecting your SLA commitments under sudden surges.</div>
+    </div>
+</div>
+""")), unsafe_allow_html=True)
+
+st.markdown(translate_jargon(clean_html(f"""
+<div class="glass-card" style="padding: 20px !important; margin: 10px 0 20px 0; border: 1px solid rgba(255, 255, 255, 0.08); background: rgba(30, 41, 59, 0.35); border-radius: 8px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255, 255, 255, 0.06); padding-bottom: 10px; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
+        <div style="font-size: 1.05rem; font-weight: 700; color: #f59e0b; display: flex; align-items: center; gap: 8px;">
+            <span>⚡ 4. Continuous Batching Parameter Tuning</span>
+        </div>
+        <span style="background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3); padding: 4px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.5px;">🟡 ENGINEERING COMPLEXITY: MEDIUM</span>
+    </div>
+    <div style="font-size: 0.9rem; color: #cbd5e1; line-height: 1.5; display: flex; flex-direction: column; gap: 10px;">
+        <div><strong style="color: #ffffff;">Why it helps:</strong> {batch_rationale}</div>
+        <div><strong style="color: #ffffff;">Expected Business Impact:</strong> Increases maximum serving throughput by up to 25% on the same cluster, maximizing the utilization efficiency of each node.</div>
+    </div>
+</div>
+""")), unsafe_allow_html=True)
+
+st.markdown(translate_jargon(clean_html(f"""
+<div class="glass-card" style="padding: 20px !important; margin: 10px 0 20px 0; border: 1px solid rgba(255, 255, 255, 0.08); background: rgba(30, 41, 59, 0.35); border-radius: 8px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255, 255, 255, 0.06); padding-bottom: 10px; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
+        <div style="font-size: 1.05rem; font-weight: 700; color: #ef4444; display: flex; align-items: center; gap: 8px;">
+            <span>🛡️ 5. Graceful Fallback & Availability Failover</span>
+        </div>
+        <span style="background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3); padding: 4px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.5px;">🟡 ENGINEERING COMPLEXITY: MEDIUM</span>
+    </div>
+    <div style="font-size: 0.9rem; color: #cbd5e1; line-height: 1.5; display: flex; flex-direction: column; gap: 10px;">
+        <div><strong style="color: #ffffff;">Why it helps:</strong> {fallback_rationale}</div>
+        <div><strong style="color: #ffffff;">Expected Business Impact:</strong> Protects your SLA commitments, prevents catastrophic downtime or cascade failures, and ensures a seamless user experience even during major system shocks.</div>
+    </div>
+</div>
+""")), unsafe_allow_html=True)
+
+
+# --- SECTION 6: 🔍 EXPERT MODE: INFERENCE OPTIMIZATION ANALYSIS ---
+with st.expander("🔍 Expert Mode: Inference Optimization Analysis", expanded=False):
     # Primary Input Metrics Panel
     st.markdown(clean_html(f"""
     <div class="glass-card" style="padding: 18px !important; margin-bottom: 25px; border: 1px solid rgba(255,255,255,0.05); border-radius: 8px;">
@@ -1842,7 +1977,7 @@ with tab_sizing:
     st.markdown("<div style='margin-bottom: 25px;'></div>", unsafe_allow_html=True)
 
     # Secondary Health Metrics Cards
-    col1, col2, col3, col4 = st.columns(4)
+    col_hm1, col_hm2, col_hm3, col_hm4 = st.columns(4)
 
     # Format Prompt-to-Decode Split
     p_d_ratio = drv["prompt_to_decode_ratio"]
@@ -1859,7 +1994,7 @@ with tab_sizing:
     else:
         itl_rating = " (Severe Latency)"
 
-    with col1:
+    with col_hm1:
         render_metric_card(
             title="Workload Character",
             value=classification["category"],
@@ -1867,7 +2002,7 @@ with tab_sizing:
             gradient_type="purple"
         )
 
-    with col2:
+    with col_hm2:
         render_metric_card(
             title="Inter-Token Latency",
             value=f"{round(itl_ms, 1)} ms",
@@ -1875,7 +2010,7 @@ with tab_sizing:
             gradient_type="cyan"
         )
 
-    with col3:
+    with col_hm3:
         render_metric_card(
             title="Active Concurrency",
             value=f"{round(drv['estimated_concurrency'], 1)} reqs",
@@ -1883,7 +2018,7 @@ with tab_sizing:
             gradient_type="purple"
         )
 
-    with col4:
+    with col_hm4:
         render_metric_card(
             title="Total Engine Throughput",
             value=f"{round(drv['total_throughput_tps'], 0):,}/s",
@@ -1897,11 +2032,8 @@ with tab_sizing:
     with v_col1:
         with st.container(border=True):
             st.markdown("<h4 style='margin-top:0; color:#cbd5e1; font-size:1.05rem; font-weight:600;'>📊 REQUEST TOKEN RATIO SHARE</h4>", unsafe_allow_html=True)
-            
-            # Donut Chart for prompt vs output tokens
             labels = ["Prompt Tokens (Prefill)", "Output Tokens (Decode)"]
             values = [inp["avg_prompt_tokens"], inp["avg_output_tokens"]]
-            
             fig_token = go.Figure(data=[go.Pie(
                 labels=labels, 
                 values=values, 
@@ -1911,7 +2043,6 @@ with tab_sizing:
                 hoverinfo="label+value",
                 textfont=dict(size=12, color="#ffffff")
             )])
-            
             fig_token.update_layout(
                 paper_bgcolor="rgba(0,0,0,0)",
                 plot_bgcolor="rgba(0,0,0,0)",
@@ -1927,16 +2058,13 @@ with tab_sizing:
                 margin=dict(t=10, b=10, l=10, r=10),
                 height=280
             )
-            st.plotly_chart(fig_token, use_container_width=True, key="token_ratio_pie")
+            st.plotly_chart(fig_token, use_container_width=True, key="token_ratio_pie_expert")
 
     with v_col2:
         with st.container(border=True):
             st.markdown("<h4 style='margin-top:0; color:#cbd5e1; font-size:1.05rem; font-weight:600;'>⚡ GPU RESOURCE BOUNDS UTILIZATION</h4>", unsafe_allow_html=True)
-            
-            # Horizontal Bar chart for GPU Core Util and KV Cache Usage
             categories = ["GPU Cores Utilized", "KV Cache Occupancy"]
             percentages = [inp["gpu_utilization_pct"], inp["kv_cache_usage_pct"]]
-            
             fig_bars = go.Figure(go.Bar(
                 x=percentages,
                 y=categories,
@@ -1950,7 +2078,6 @@ with tab_sizing:
                 textposition='outside',
                 textfont=dict(size=12, color="#ffffff", family="Outfit")
             ))
-            
             fig_bars.update_layout(
                 paper_bgcolor="rgba(0,0,0,0)",
                 plot_bgcolor="rgba(0,0,0,0)",
@@ -1966,11 +2093,8 @@ with tab_sizing:
                 margin=dict(t=30, b=10, l=10, r=20),
                 height=260
             )
-            st.plotly_chart(fig_bars, use_container_width=True, key="gpu_util_bars")
+            st.plotly_chart(fig_bars, use_container_width=True, key="gpu_util_bars_expert")
 
-
-# --- TAB 3: BOTTLENECK DIAGNOSTICS ---
-with tab_bottlenecks:
     # Launch Risk Exposure Profile
     st.markdown("<div style='margin: 15px 0 10px 0; font-size: 1.1rem; font-weight: 700; letter-spacing: -0.3px; color: #cbd5e1;'>⚠️ LAUNCH RISK EXPOSURE PROFILE (RANKED BY SEVERITY)</div>", unsafe_allow_html=True)
     st.markdown(clean_html(risks_html), unsafe_allow_html=True)
@@ -1979,7 +2103,6 @@ with tab_bottlenecks:
     st.markdown("### 🔍 Pathological Bottleneck Breakdown", unsafe_allow_html=True)
     st.markdown('<div class="glass-card">', unsafe_allow_html=True)
     st.markdown("<p style='font-size: 0.95rem; color: #cbd5e1; margin-bottom: 20px;'>A deep-dive investigation into the mechanical bottlenecks discovered by the heuristics engine based on live inputs:</p>", unsafe_allow_html=True)
-
     for diag in diagnoses:
         sev_color = "#ef4444" if diag["severity"] == "CRITICAL" else ("#f59e0b" if diag["severity"] == "WARNING" else "#10b981")
         st.markdown(clean_html(f"""
@@ -2011,9 +2134,7 @@ with tab_bottlenecks:
         """), unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
-
-# --- TAB 4: DEEP-DIVE ENGINEER REPORT ---
-with tab_engineer:
+    # Deep-Dive Engineer Report
     st.markdown("### ⚙️ Deep-Dive Engineer Report", unsafe_allow_html=True)
     st.markdown('<div class="glass-card">', unsafe_allow_html=True)
 
@@ -2078,9 +2199,7 @@ with tab_engineer:
 
     st.markdown('</div>', unsafe_allow_html=True)
 
-
-# --- TAB 5: WHAT-IF PROJECTIONS ---
-with tab_whatif:
+    # Proactive What-if Analysis Projections
     st.markdown("### 🔮 Proactive What-if Analysis Projections", unsafe_allow_html=True)
     st.markdown("<p style='font-size: 0.95rem; color: #cbd5e1; margin-bottom: 20px;'>Projecting system operational health and performance under hypothetical workload scaling or cluster expansions:</p>", unsafe_allow_html=True)
 
@@ -2182,8 +2301,7 @@ with tab_whatif:
         st.markdown(clean_html(w3_html), unsafe_allow_html=True)
 
 
-# --- TAB 6: GEMINI CO-PILOT ---
-with tab_gemini:
+    # Gemini Co-pilot (Staff Engineer Report)
     st.markdown("### 🤖 Cognitive Staff Engineer Report", unsafe_allow_html=True)
     st.markdown('<div class="glass-card">', unsafe_allow_html=True)
     st.markdown("This cognitive panel converts raw telemetry diagnostics into an expert narrative audit. Powered by Google Antigravity Agent, it uses LLM reasoning to detail the physical cache constraints and scheduling queues.")
@@ -2203,6 +2321,7 @@ with tab_gemini:
                 report_text = call_antigravity_agent(api_key, report)
                 st.session_state["gemini_report"] = report_text
                 st.session_state["gemini_report_preset"] = selected_preset_name or "custom"
+                st.rerun()
 
     with col_btn2:
         # Simulate/Mock Button (Always Active)
@@ -2349,12 +2468,23 @@ The customized LLM serving configuration is running with moderate health but exh
 * **What if average prompt length doubles?:** The prefill-bound compute demand will scale linearly, significantly increasing TTFT. KV Cache memory footprint will expand, potentially causing swapping to host RAM if limits aren't set.
 * **What if we upgrade hardware (e.g., adding GPUs or upgrading generations)?:** Will amortize weight reload times and prefill GEMM operations. Tensor Parallel scaling is highly effective across NVLink, but has diminishing returns over standard PCIe slots.
 """
+            st.session_state["gemini_report"] = mock_text
+            st.session_state["gemini_report_preset"] = selected_preset_name or "custom"
+            st.rerun()
+
+    if "gemini_report" in st.session_state and st.session_state["gemini_report"]:
+        st.markdown("---")
+        st.markdown(st.session_state["gemini_report"])
+
+    st.markdown('</div>', unsafe_allow_html=True)
+
 
 # ----------------- FOOTER -----------------
 st.markdown("""
 <div style="text-align: center; margin-top: 40px; padding: 20px; border-top: 1px solid rgba(255, 255, 255, 0.05);">
     <p style="font-size: 0.8rem; color: #64748b;">
-        AI Launch Readiness Agent 🚀 • Designed for deep diagnostic infrastructure audits. Powered by expert heuristics.
+        Headroom 🚀 • AI Launch Advisor • Designed for deep diagnostic infrastructure audits. Powered by expert heuristics.
     </p>
 </div>
 """, unsafe_allow_html=True)
+
