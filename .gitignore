@@ -7,3 +7,4 @@ __pycache__/
 .streamlit/secrets.toml
 EOF
 .venv311/
+.venv311/
