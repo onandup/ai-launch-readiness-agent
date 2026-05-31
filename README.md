@@ -1,5 +1,19 @@
 # AI Launch Readiness Agent
 
+## Screenshots
+
+### Launch Planning Input
+
+![Launch Planning Input](docs/input-form.png)
+
+### Launch Readiness Assessment
+
+![Launch Readiness](docs/readiness-score.png)
+
+### Recommendations
+
+![Recommendations](docs/recommendations.png)
+
 **Before you launch an AI feature, get a virtual review from an AI Infrastructure Lead.**
 
 AI teams can build prototypes in days. Launching them reliably, cost-effectively, and at scale is much harder.
