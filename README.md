@@ -1,5 +1,11 @@
 # AI Launch Readiness Agent
 
+Before you launch an AI feature, get a virtual review from an AI Infrastructure Lead.
+
+Think of this as a virtual AI infrastructure review board that tells you whether you're actually ready to launch.
+
+AI teams can build prototypes in days. Launching them reliably, cost-effectively, and at scale is much harder.
+
 ## Screenshots
 
 ### Launch Planning Input
@@ -14,11 +20,21 @@
 
 ![Recommendations](docs/recommendations.png)
 
-**Before you launch an AI feature, get a virtual review from an AI Infrastructure Lead.**
+## Why This Matters
 
-Think of this as a virtual AI infrastructure review board that tells you whether you're actually ready to launch.
+Many founders launch AI features without understanding:
 
-AI teams can build prototypes in days. Launching them reliably, cost-effectively, and at scale is much harder. AI Launch Readiness Agent helps founders, builders, and product teams evaluate whether an AI feature is truly ready for production by reviewing cost, reliability, scalability, observability, and operational risks.
+- How much they will cost
+- Whether they will scale
+- Whether they will meet latency goals
+- How reliability incidents will be handled
+- Whether they have the right evaluation framework
+
+Large companies run launch reviews before shipping AI systems.
+
+Most startups don't.
+
+AI Launch Readiness Agent brings that expertise to founders and builders.
 
 ## The Problem
 
@@ -95,6 +111,20 @@ Recommendations:
 
 ## How It Works
 
+## Managed Agent Architecture
+
+The AI Launch Readiness Agent acts as a virtual review board.
+
+It uses specialized tools for:
+
+- Capacity analysis
+- Cost analysis
+- Reliability review
+- Launch risk assessment
+- Recommendation generation
+
+The managed agent orchestrates these analyses and produces a launch recommendation.
+
 The system combines:
 
 ### Launch Review Agent
@@ -140,14 +170,6 @@ Generates actionable launch recommendations with rationale and expected impact.
 * Evaluation framework
 * Success metrics
 * Monitoring requirements
-
-## Why This Matters
-
-Most AI development tools help teams build AI features.
-
-Very few help teams determine whether those features are ready to launch.
-
-AI Launch Readiness Agent focuses on the operational and business realities of deploying AI systems into production.
 
 ## Built With
 
