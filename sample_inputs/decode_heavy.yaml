@@ -1,0 +1,11 @@
+model: "meta-llama/Meta-Llama-3-8B-Instruct"
+gpu_type: "L4-24GB"
+num_gpus: 4
+qps: 4.5
+avg_prompt_tokens: 128
+avg_output_tokens: 2048
+ttft_p95_sec: 0.18
+e2e_latency_p95_sec: 35.00
+gpu_utilization_pct: 88.0
+kv_cache_usage_pct: 92.0
+traffic_pattern: "constant"

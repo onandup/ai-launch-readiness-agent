@@ -1,0 +1,11 @@
+model: "meta-llama/Meta-Llama-3-70B-Instruct"
+gpu_type: "A100-SXM4-80GB"
+num_gpus: 2
+qps: 12.0
+avg_prompt_tokens: 2048
+avg_output_tokens: 256
+ttft_p95_sec: 2.85
+e2e_latency_p95_sec: 12.50
+gpu_utilization_pct: 94.0
+kv_cache_usage_pct: 98.0
+traffic_pattern: "bursty"

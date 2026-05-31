@@ -1,0 +1,11 @@
+model: "meta-llama/Meta-Llama-3-8B-Instruct"
+gpu_type: "H100-SXM5-80GB"
+num_gpus: 1
+qps: 1.5
+avg_prompt_tokens: 128
+avg_output_tokens: 1024
+ttft_p95_sec: 0.15
+e2e_latency_p95_sec: 18.20
+gpu_utilization_pct: 22.0
+kv_cache_usage_pct: 15.0
+traffic_pattern: "constant"
