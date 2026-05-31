@@ -10,7 +10,7 @@ AI teams can build prototypes in days. Launching them reliably, cost-effectively
 
 ### Launch Planning Input
 
-![Launch Planning Input](docs/input-form.png)
+![Launch Planning Input](docs/input_form.png)
 
 ### Launch Readiness Assessment
 
